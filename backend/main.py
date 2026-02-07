@@ -61,34 +61,30 @@ async def ws_debug(websocket: WebSocket):
             pass
 
 @app.websocket("/ws/video-stream")
-async def websocket_endpoint(websocket: WebSocket) -> None:
+async def ws_video_stream(websocket: WebSocket):
     await websocket.accept()
-    print("Video Stream Connected")
-    
+    print("Video WebSocket connected")
+
     try:
         while True:
-            # 1. Receive
+            # Receive frame as bytes
             data = await websocket.receive_bytes()
+            # Convert bytes to numpy array
             nparr = np.frombuffer(data, np.uint8)
-            
-            # 2. Decode
+            # Decode JPEG to image
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             if frame is None:
                 continue
-            
-            # 3. Process
-            processed_frame = face_service.process_frame(frame)
 
-            # 4. Display (Optional server-side view)
-            cv2.imshow("Server Feed", processed_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'): break
+            # Display frame
+            cv2.imshow("Video Stream", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
-            await websocket.send_text("ack")
-            
     except WebSocketDisconnect:
-        print("Video Stream Disconnected")
+        print("Video WebSocket disconnected")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error in video websocket: {e}")
     finally:
         cv2.destroyAllWindows()
         try:
@@ -109,7 +105,6 @@ async def update_person(person_id: str, person: PersonUpdate):
     if success:
         return {"status": "updated", "person_id": person_id}
     return {"status": "error", "message": "Person not found"}
-
 
 @app.get("/people", response_model=List[Person])
 async def get_people():
