@@ -1,15 +1,21 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
-import numpy as np
 import cv2
+import numpy as np
 from typing import Dict
+
+# Import our new service
+from services.face_recognition import FaceService
 
 app = FastAPI()
 
+# Initialize the service globally
+# This triggers the loading of images when the server starts
+face_service = FaceService(known_faces_dir="known_faces")
+
 @app.get("/")
 async def root() -> Dict[str, str]:
-    """Health check endpoint."""
-    return {"message": "Video Stream API is running"}
+    return {"message": "Face Recognition API is running"}
 
 @app.websocket("/ws/debug")
 async def ws_debug(websocket: WebSocket):
@@ -36,46 +42,42 @@ async def ws_debug(websocket: WebSocket):
 
 @app.websocket("/ws/video-stream")
 async def websocket_endpoint(websocket: WebSocket) -> None:
-    """
-    WebSocket endpoint that receives encoded image frames (JPEG),
-    decodes them, processes them, and displays them server-side.
-    """
     await websocket.accept()
-    print("Client connected via WebSocket")
+    print("Video Stream Connected")
     
     try:
         while True:
-            # 1. Receive bytes (Most common formats will be accepted)
-            data: bytes = await websocket.receive_bytes()
-            nparr: np.ndarray = np.frombuffer(data, np.uint8)
+            # 1. Receive
+            data = await websocket.receive_bytes()
+            nparr = np.frombuffer(data, np.uint8)
             
-            # 2. Decode image
-            frame: np.ndarray | None = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            # 2. Decode
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             if frame is None:
-                print("Could not decode frame")
                 continue
             
-            # 3. DISPLAY: Show in a window 
-            cv2.imshow("Server Video Feed", frame)
-            
-            # Check for 'q' key to quit
+            # 3. Process (Delegate to Service)
+            processed_frame = face_service.process_frame(frame)
+
+            # 4. Display (Server-side debugging)
+            # Note: This requires a GUI environment. 
+            # If running on a headless server, comment out the imshow/waitKey lines.
+            cv2.imshow("Server Feed", processed_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-            # 4. send confirmation back to client 
             await websocket.send_text("ack")
             
     except WebSocketDisconnect:
-        print("Client disconnected")
+        print("Video Stream Disconnected")
     except Exception as e:
-        print(f"Unexpected Error: {e}")
+        print(f"Error: {e}")
     finally:
         cv2.destroyAllWindows()
-        # Attempt to close the websocket gracefully if it's still open
         try:
             await websocket.close()
         except RuntimeError:
-            pass # Websocket already closed
+            pass
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
