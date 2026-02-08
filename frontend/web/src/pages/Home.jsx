@@ -157,21 +157,6 @@ function Home() {
           </div>
         </section>
 
-        <section className="home__card" aria-label="Don’t Forget">
-          <h2 className="home__card-title">Don’t Forget...</h2>
-
-          <div className="home__chips">
-            <button className="home__chip" type="button">
-              Birthdays
-            </button>
-            <button className="home__chip" type="button">
-              Colleagues
-            </button>
-            <button className="home__chip" type="button">
-              Add More +
-            </button>
-          </div>
-        </section>
       </main>
     </div>
   )

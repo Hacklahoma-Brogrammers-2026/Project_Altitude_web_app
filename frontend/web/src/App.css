@@ -313,12 +313,6 @@
   padding-bottom: 2rem;
 }
 
-.home__title {
-  align-self: center;
-  margin: 0;
-  font-size: clamp(2.4rem, 2.6vw + 1.6rem, 2.75rem);
-  font-weight: 500;
-}
 
 .home__greeting {
   margin: 0.5rem 0 0;
@@ -417,6 +411,27 @@
   width: 40%;
   background: #cbd6ea;
   border-radius: 999px;
+  animation: search-progress 900ms ease-in-out infinite;
+}
+
+.home__results-progress {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(203, 214, 234, 0.5);
+  overflow: hidden;
+}
+
+.home__results-progress::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 40%;
+  background: #97a8c8;
+  border-radius: inherit;
   animation: search-progress 900ms ease-in-out infinite;
 }
 
@@ -1095,26 +1110,16 @@
   font-size: 1.1rem;
 }
 
+.home__row-summary {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 4px;
+}
+
 .home__row-more {
   font-size: 1.1rem;
 }
 
-.home__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.25rem;
-}
-
-.home__chip {
-  height: 50px;
-  min-width: 160px;
-  padding: 0 1.5rem;
-  border-radius: 25px;
-  border: none;
-  background: #cbd6ea;
-  font-size: 1.1rem;
-  cursor: pointer;
-}
 
 @media (max-width: 900px) {
   .app-nav {
@@ -1233,17 +1238,6 @@
   .home__latest-avatar {
     width: 56px;
     height: 56px;
-  }
-
-  .home__chips {
-    justify-content: center;
-    align-items: center;
-  }
-
-  .home__chip {
-    flex: 1 1 100%;
-    max-width: 280px;
-    text-align: center;
   }
 
   .person__card-header {

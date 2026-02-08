@@ -105,6 +105,14 @@ function SearchQuery() {
         <section className="home__card" aria-label="People">
           <h2 className="home__card-title">People</h2>
 
+          {isSearching ? (
+            <div
+              className="home__results-progress"
+              role="progressbar"
+              aria-label="Searching"
+              aria-busy="true"
+            />
+          ) : null}
           {errorMessage ? (
             <p className="home__status home__status--error">{errorMessage}</p>
           ) : null}
@@ -130,16 +138,7 @@ function SearchQuery() {
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span className="home__row-relation">{row.relation}</span>
                   {row.summary ? (
-                    <span
-                      className="home__row-summary"
-                      style={{
-                        fontSize: '0.9em',
-                        color: '#666',
-                        marginTop: '4px',
-                      }}
-                    >
-                      {row.summary}
-                    </span>
+                    <span className="home__row-summary">{row.summary}</span>
                   ) : null}
                 </div>
                 <span className="home__row-more">More +</span>
