@@ -96,6 +96,46 @@ async def get_person(person_id: str, request: Request):
         "last_modified": contact.last_modified,
     }
 
+@router.get("/profile/{person_id}/search")
+async def search_person_notes(person_id: str, q: str):
+    """
+    Search within a single profile (contact notes).
+    """
+    current_user = container.face_service.current_user_id
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not logged in",
+        )
+
+    # 1. Verify existence/ownership
+    contact = contact_repo.get_contact_by_id(person_id)
+    if not contact or contact.owner_user_id != current_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Person not found",
+        )
+
+    # 2. Semantic search scoped to this contact_id
+    note_results = contact_note_repo.semantic_search_notes(
+        user_id=current_user,
+        query=q,
+        limit=20,
+        contact_id=person_id
+    )
+
+    # 3. Format response
+    results = []
+    for item in note_results:
+        note = item.note
+        results.append({
+            "label": note.label,
+            "content": note.content
+        })
+
+    return {"results": results}
+
+
 @router.get("/searchUser")
 async def search_user(q: str, request: Request):
     """

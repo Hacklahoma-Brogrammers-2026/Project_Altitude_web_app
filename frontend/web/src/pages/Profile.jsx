@@ -135,7 +135,7 @@ function Profile() {
     }
 
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/api/profile/${personId}/search`
+    const endpoint = `${API_BASE_URL}/profile/${personId}/search`
 
     const runSearch = async () => {
       setIsSearching(true)

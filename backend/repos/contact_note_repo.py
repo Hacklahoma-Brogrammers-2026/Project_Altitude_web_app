@@ -130,6 +130,7 @@ def semantic_search_notes(
     num_candidates: int = 200,
     contact_id: str | None = None,
     label: str | None = None,
+    min_score: float = 0.7,
 ) -> list[NoteSearchResult]:
     """
     Semantic search notes using $vectorSearch.
@@ -181,5 +182,6 @@ def semantic_search_notes(
     out: list[NoteSearchResult] = []
     for d in contact_notes.aggregate(pipeline):
         score = float(d.pop("score"))
-        out.append(NoteSearchResult(note=ContactNote(**d), score=score))
+        if score >= min_score:
+            out.append(NoteSearchResult(note=ContactNote(**d), score=score))
     return out
