@@ -115,7 +115,7 @@ function Profile() {
   const normalizedResults = useMemo(() => {
     return searchResults.map((result, index) => {
       const label = result.label ?? result.field ?? 'Result'
-      const value = result.value ?? result.summary ?? ''
+      const value = result.value ?? result.summary ?? result.content ?? ''
       const key = result.id ?? `${label}-${index}`
       return {
         key,

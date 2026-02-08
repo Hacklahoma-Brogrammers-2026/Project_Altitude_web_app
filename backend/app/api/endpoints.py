@@ -198,7 +198,8 @@ async def search_info(q: str, request: Request):
             "id": contact.contact_id,
             "name": f"{contact.first_name} {contact.last_name}",
             "avatar": _build_photo_url(request, contact.image_path),
-            "label": note.label
+            "label": note.label,
+            "content": note.content
         })
         
     return {"results": search_results}

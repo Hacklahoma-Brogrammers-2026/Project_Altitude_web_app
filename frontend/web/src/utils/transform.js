@@ -21,7 +21,7 @@ export function normalizePerson(person, index = 0) {
   }
 
   const relation = person.label ?? person.relation ?? person.group ?? 'Person'
-  const summary = person.note ?? person.summary ?? ''
+  const summary = person.note ?? person.summary ?? person.content ?? ''
 
   return {
     id,
