@@ -6,7 +6,7 @@ import Login from './pages/Login.jsx'
 import PersonDatabase from './pages/PersonDatabase.jsx'
 import Profile from './pages/Profile.jsx'
 import SearchQuery from './pages/SearchQuery.jsx'
-import VideoFeedback from './pages/VideoFeedback.jsx'
+import VideoProcessing from './pages/VideoProcessing.jsx'
 
 function AppLayout() {
   const [navOpen, setNavOpen] = useState(false)
@@ -55,10 +55,10 @@ function AppLayout() {
           </NavLink>
           <NavLink
             className="app-nav__link"
-            to="/video-feedback"
+            to="/video-processing"
             onClick={handleNavClick}
           >
-            Video Feedback
+            Video Processing
           </NavLink>
         </nav>
         <div className="app-nav__footer">
@@ -89,7 +89,7 @@ function App() {
         <Route path="/people" element={<PersonDatabase />} />
         <Route path="/profile/:id" element={<Profile />} />
         <Route path="/search" element={<SearchQuery />} />
-        <Route path="/video-feedback" element={<VideoFeedback />} />
+        <Route path="/video-processing" element={<VideoProcessing />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

@@ -3,7 +3,7 @@ const heroImage =
 const avatarPlaceholder =
   'https://www.figma.com/api/mcp/asset/e1cc52ac-9fe1-43fd-9bcf-79865cf93c24'
 
-function VideoFeedback() {
+function VideoProcessing() {
   return (
     <div className="home video">
       <div className="home__bg" aria-hidden="true">
@@ -11,9 +11,9 @@ function VideoFeedback() {
       </div>
 
       <main className="home__content video__content">
-        <p className="home__greeting">Video Feedback</p>
+        <p className="home__greeting">Video Processing</p>
 
-        <section className="home__card video__card" aria-label="Video Feedback">
+        <section className="home__card video__card" aria-label="Video Processing">
           <div className="video__layout">
             <div className="video__feed" role="img" aria-label="Camera feed">
               <span className="video__feed-label">Camera Feed</span>
@@ -83,4 +83,4 @@ function VideoFeedback() {
   )
 }
 
-export default VideoFeedback
+export default VideoProcessing
