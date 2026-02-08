@@ -706,6 +706,9 @@
   height: 120px;
   border-radius: 50%;
   background: #ffffff;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
