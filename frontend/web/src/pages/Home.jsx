@@ -1,15 +1,51 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { latestPeople } from '../data/people.js'
+import { useEffect, useMemo, useState } from 'react'
+import { normalizePerson } from '../utils/transform'
+import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
 
-const heroImage =
-  'https://www.figma.com/api/mcp/asset/55c25fd1-e61b-4263-a50f-2ba9d4e4bc55'
-const avatarPlaceholder =
-  'https://www.figma.com/api/mcp/asset/e1cc52ac-9fe1-43fd-9bcf-79865cf93c24'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 function Home() {
   const [query, setQuery] = useState('')
+  const [people, setPeople] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const navigate = useNavigate()
+
+  const latestPeople = useMemo(() => {
+    return people.map(normalizePerson)
+  }, [people])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const endpoint = `${API_BASE_URL}/api/getPeople?sort=last_modified`
+
+    const loadPeople = async () => {
+      setIsLoading(true)
+      setErrorMessage('')
+      try {
+        const response = await fetch(endpoint, { signal: controller.signal })
+        if (!response.ok) {
+          throw new Error('Request failed')
+        }
+        const data = await response.json()
+        const items = Array.isArray(data) ? data : data?.results ?? []
+        setPeople(items)
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          return
+        }
+        setPeople([])
+        setErrorMessage('Unable to load people.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadPeople()
+
+    return () => controller.abort()
+  }, [])
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -23,7 +59,7 @@ function Home() {
   return (
     <div className="home">
       <div className="home__bg" aria-hidden="true">
-        <img src={heroImage} alt="" />
+        <img src={HERO_IMAGE} alt="" />
       </div>
 
       <main className="home__content home__content--center">
@@ -52,6 +88,11 @@ function Home() {
             </Link>
           </div>
 
+          {isLoading ? <p className="home__status">Loading people…</p> : null}
+          {!isLoading && errorMessage ? (
+            <p className="home__status home__status--error">{errorMessage}</p>
+          ) : null}
+
           <div className="home__latest-grid">
             {latestPeople.map((row) => (
               <Link
@@ -61,7 +102,7 @@ function Home() {
               >
                 <img
                   className="home__latest-avatar"
-                  src={row.avatar || avatarPlaceholder}
+                  src={row.avatar || AVATAR_PLACEHOLDER}
                   alt=""
                   aria-hidden="true"
                 />

@@ -1,16 +1,20 @@
 import os
 import time
+import sys
 from dotenv import load_dotenv
 from pymongo import MongoClient, ASCENDING
 from pymongo.operations import SearchIndexModel
 
+# Add backend to path to import config if not installed as package
+sys.path.append(os.path.join(os.path.dirname(__file__), '../backend'))
+
+from config import config
+
 load_dotenv()
 
-MONGO_URI = os.environ["MONGO_URL"]
-DB_NAME = os.environ.get("MONGO_DB", "appdb")
-EMBED_DIM = int(os.environ.get("EMBED_DIM", "1536"))
-
-
+MONGO_URI = config.mongo_url
+DB_NAME = config.db_name
+EMBED_DIM = config.embed_dim
 
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
