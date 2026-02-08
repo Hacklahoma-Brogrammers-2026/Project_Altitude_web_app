@@ -10,6 +10,8 @@ from app.core.container import container
 ws_router = APIRouter()
 latest_frame = None
 latest_frame_bytes = None
+last_recognition_id = None
+recognition_clients: set[WebSocket] = set()
 lock = threading.Lock()
 face_service = container.face_service
 
@@ -34,6 +36,21 @@ def display_loop(stop_event):
 
     cv2.destroyAllWindows()
     print("Display loop stopped")
+
+async def _broadcast_recognition(contact_id: str) -> None:
+    if not recognition_clients:
+        return
+
+    payload = {"contact_id": contact_id}
+    disconnected: list[WebSocket] = []
+    for client in recognition_clients:
+        try:
+            await client.send_json(payload)
+        except Exception:
+            disconnected.append(client)
+
+    for client in disconnected:
+        recognition_clients.discard(client)
 
 @ws_router.websocket("/ws/video-debug")
 async def websocket_debug(websocket: WebSocket):
@@ -76,7 +93,7 @@ async def websocket_debug(websocket: WebSocket):
 
 @ws_router.websocket("/ws/video-producer")
 async def websocket_producer(websocket: WebSocket):
-    global latest_frame, latest_frame_bytes
+    global latest_frame, latest_frame_bytes, last_recognition_id
     await websocket.accept()
     print("Video producer connected")
     print("Video WebSocket connected")
@@ -107,6 +124,11 @@ async def websocket_producer(websocket: WebSocket):
                         latest_frame = frame
                         latest_frame_bytes = buffer.tobytes()
 
+                recognized_id = face_service.last_recognized_id
+                if recognized_id and recognized_id != last_recognition_id:
+                    last_recognition_id = recognized_id
+                    await _broadcast_recognition(recognized_id)
+
             await websocket.send_text("ack")
 
     except Exception as e:
@@ -127,3 +149,20 @@ async def websocket_consumer(websocket: WebSocket):
 
     except Exception as e:
         print(f"Video consumer error: {e}")
+
+@ws_router.websocket("/ws/recognition")
+async def websocket_recognition(websocket: WebSocket):
+    await websocket.accept()
+    recognition_clients.add(websocket)
+    print("Recognition WebSocket connected")
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        print(f"Recognition WebSocket error: {e}")
+    finally:
+        recognition_clients.discard(websocket)
+        print("Recognition WebSocket disconnected")

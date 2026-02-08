@@ -22,6 +22,7 @@ class FaceService:
         self.known_face_ids: List[str] = []
         self.known_face_metadata: Dict[str, Contact] = {}
         self.current_user_id = None
+        self.last_recognized_id: str | None = None
 
         # self._load_from_storage() # Do not load at init, wait for user login
 
@@ -137,6 +138,7 @@ class FaceService:
         face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
 
         face_display_data = []
+        recognized_id = None
 
         for location, encoding in zip(face_locations, face_encodings):
             name = "Unknown"
@@ -160,6 +162,7 @@ class FaceService:
                 name = person_obj.name
                 access_label = f"Age: {person_obj.age}" if person_obj.age else "Verified"
                 color = (0, 255, 0) # Green
+                recognized_id = person_id
 
             elif min_distance < 0.75:
                 # WEAK MATCH / AMBIGUOUS -> Do NOT save distinct entry
@@ -180,6 +183,7 @@ class FaceService:
                 name = new_person.name 
                 access_label = "New Entry Saved"
                 color = (0, 0, 255) # Red
+                recognized_id = new_person.contact_id
 
             face_display_data.append((location, name, access_label, color))
 
@@ -190,5 +194,8 @@ class FaceService:
             cv2.rectangle(frame, (left, bottom - 35), (right, bottom), color, cv2.FILLED)
             cv2.putText(frame, name, (left + 6, bottom - 15), cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
             cv2.putText(frame, label, (left + 6, bottom - 2), cv2.FONT_HERSHEY_DUPLEX, 0.4, (200, 200, 200), 1)
+
+        if recognized_id and recognized_id != self.last_recognized_id:
+            self.last_recognized_id = recognized_id
 
         return frame

@@ -62,14 +62,6 @@ async def get_people(sort: str = Query("last_modified")):
         detail="Invalid sort option",
     )
 
-@router.put("/people/{person_id}")
-async def update_person(person_id: str, person: PersonUpdate):
-    """Updates a person's name and age."""
-    success = container.face_service.update_person_details(person_id, person.name, person.age)
-    if success:
-        return {"status": "updated", "person_id": person_id}
-    return {"status": "error", "message": "Person not found"}
-
 @router.get("/person/{person_id}")
 async def get_person(person_id: str, request: Request):
     current_user = container.face_service.current_user_id

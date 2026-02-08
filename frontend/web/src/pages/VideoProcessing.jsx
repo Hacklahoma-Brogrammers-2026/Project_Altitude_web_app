@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { HERO_IMAGE } from '../utils/constants'
+import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 const getWebSocketUrl = () => {
   if (typeof window === 'undefined') {
@@ -14,6 +16,19 @@ const getWebSocketUrl = () => {
   return `${protocol}://${window.location.hostname}:8000/ws/video-consumer`
 }
 
+const getRecognitionWebSocketUrl = () => {
+  if (typeof window === 'undefined') {
+    return ''
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+  const apiBase = import.meta.env.VITE_API_BASE || ''
+  if (apiBase) {
+    const normalized = apiBase.replace(/^http/, 'ws').replace(/\/$/, '')
+    return `${normalized}/ws/recognition`
+  }
+  return `${protocol}://${window.location.hostname}:8000/ws/recognition`
+}
+
 function VideoProcessing() {
   const [frameSrc, setFrameSrc] = useState('')
   const [status, setStatus] = useState('Connecting to stream...')
@@ -21,11 +36,13 @@ function VideoProcessing() {
   const [voiceStatus, setVoiceStatus] = useState('Ready to record')
   const [voiceUrl, setVoiceUrl] = useState('')
   const [voiceBlob, setVoiceBlob] = useState(null)
+  const [recognizedPerson, setRecognizedPerson] = useState(null)
   const urlRef = useRef('')
   const voiceUrlRef = useRef('')
   const recorderRef = useRef(null)
   const streamRef = useRef(null)
   const cancelRef = useRef(false)
+  const lastRecognizedIdRef = useRef('')
 
   useEffect(() => {
     const wsUrl = getWebSocketUrl()
@@ -63,6 +80,58 @@ function VideoProcessing() {
       if (urlRef.current) {
         URL.revokeObjectURL(urlRef.current)
       }
+    }
+  }, [])
+
+  useEffect(() => {
+    const wsUrl = getRecognitionWebSocketUrl()
+    if (!wsUrl) {
+      return undefined
+    }
+
+    const socket = new WebSocket(wsUrl)
+    let isActive = true
+
+    socket.onmessage = async (event) => {
+      let payload = null
+      try {
+        payload = JSON.parse(event.data)
+      } catch {
+        return
+      }
+
+      const contactId = payload?.contact_id
+      if (!contactId || contactId === lastRecognizedIdRef.current) {
+        return
+      }
+
+      lastRecognizedIdRef.current = contactId
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/person/${contactId}`)
+        if (!response.ok) {
+          throw new Error('Recognition lookup failed')
+        }
+        const data = await response.json()
+        if (isActive) {
+          setRecognizedPerson(data)
+        }
+      } catch {
+        if (isActive) {
+          setRecognizedPerson(null)
+        }
+      }
+    }
+
+    socket.onerror = () => {
+      if (isActive) {
+        setRecognizedPerson(null)
+      }
+    }
+
+    return () => {
+      isActive = false
+      socket.close()
     }
   }, [])
 
@@ -179,6 +248,11 @@ function VideoProcessing() {
     // Placeholder for upload integration.
   }
 
+  const recognizedName = recognizedPerson
+    ? `${recognizedPerson.first_name ?? ''} ${recognizedPerson.last_name ?? ''}`.trim() || 'Unknown Person'
+    : 'No one recognized yet'
+  const recognizedAvatar = recognizedPerson?.photo ?? AVATAR_PLACEHOLDER
+
   return (
     <div className="home video">
       <div className="home__bg" aria-hidden="true">
@@ -203,10 +277,13 @@ function VideoProcessing() {
                 className="video__person-avatar"
                 role="img"
                 aria-label="Recognized person"
+                style={{
+                  backgroundImage: `url(${recognizedAvatar})`,
+                }}
               />
               <div className="video__person-details">
                 <span className="video__person-label">Recognized</span>
-                <span className="video__person-name">First Last</span>
+                <span className="video__person-name">{recognizedName}</span>
               </div>
             </div>
           </div>
