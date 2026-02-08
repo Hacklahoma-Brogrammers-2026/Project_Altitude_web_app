@@ -14,22 +14,48 @@ lock = threading.Lock()
 stop_event = threading.Event()  # shared stop signal
 face_service = FaceService()
 
-async def display_loop():
+def display_loop():
     global latest_frame
+    cv2.namedWindow("Video Stream", cv2.WINDOW_NORMAL)
     while True:
-        await asyncio.sleep(0.01)  # prevent busy loop
         if latest_frame is not None:
-            frame_copy = latest_frame.copy()
+            # Acquire the lock before reading the frame
+            with lock:
+                frame_copy = latest_frame.copy()
             cv2.imshow("Video Stream", frame_copy)
-            # This is REQUIRED for the window to update
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
+
+        # This is REQUIRED for GUI update
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
     cv2.destroyAllWindows()
 
+threading.Thread(target=display_loop).start()
 
-if os.getenv("DISPLAY_STREAM") == "1":
-    # start the display loop in a separate thread
-    threading.Thread(target=display_loop, daemon=True).start()
+@ws_router.websocket("/ws/video-debug")
+async def websocket_debug(websocket: WebSocket):
+    global latest_frame
+    await websocket.accept()
+    stop_event.clear()
+    print("Video WebSocket connected")
+
+    try:
+        while not stop_event.is_set():
+            try:
+                data = await websocket.receive_bytes()
+            except Exception:
+                print("WebSocket disconnected")
+                stop_event.set()  # stop this loop
+                break
+
+            nparr = np.frombuffer(data, np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if frame is not None:
+                with lock:
+                    latest_frame = frame
+
+    except Exception as e:
+        print(f"Video WebSocket error: {e}")
+        stop_event.set()
 
 
 @ws_router.websocket("/ws/video-producer")
@@ -69,7 +95,6 @@ async def websocket_producer(websocket: WebSocket):
 
     except Exception as e:
         print(f"Video producer error: {e}")
-
 
 @ws_router.websocket("/ws/video-consumer")
 async def websocket_consumer(websocket: WebSocket):
