@@ -436,6 +436,7 @@
   text-decoration: none;
 }
 
+
 .home__latest-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -794,6 +795,12 @@
   margin: 0;
   font-size: 1rem;
   color: rgba(52, 65, 83, 0.75);
+}
+
+.profile__summary {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: rgba(52, 65, 83, 0.7);
 }
 
 .profile__details {

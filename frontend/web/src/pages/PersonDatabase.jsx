@@ -1,21 +1,70 @@
 import { Link } from 'react-router-dom'
-import { useMemo, useState } from 'react'
-import { people } from '../data/people.js'
+import { useEffect, useMemo, useState } from 'react'
 
 const heroImage =
   'https://www.figma.com/api/mcp/asset/55c25fd1-e61b-4263-a50f-2ba9d4e4bc55'
 const avatarPlaceholder =
   'https://www.figma.com/api/mcp/asset/e1cc52ac-9fe1-43fd-9bcf-79865cf93c24'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 function PersonDatabase() {
   const pageSize = 15
-  const totalPages = Math.max(1, Math.ceil(people.length / pageSize))
   const [currentPage, setCurrentPage] = useState(1)
+  const [people, setPeople] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [sortFilter, setSortFilter] = useState('last_modified')
+
+  const totalPages = Math.max(1, Math.ceil(people.length / pageSize))
+
+  const normalizedPeople = useMemo(() => {
+    return people.map((person, index) => {
+      const id = person.contact_id ?? person.id ?? `${index}`
+      const name = `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim()
+      return {
+        id,
+        name: name || 'Unknown Person',
+        avatar: person.photo ?? person.photo_url ?? person.image ?? person.avatar,
+      }
+    })
+  }, [people])
 
   const pageItems = useMemo(() => {
     const start = (currentPage - 1) * pageSize
-    return people.slice(start, start + pageSize)
-  }, [currentPage])
+    return normalizedPeople.slice(start, start + pageSize)
+  }, [currentPage, normalizedPeople])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const endpoint = `${API_BASE_URL}/api/getPeople?sort=${sortFilter}`
+
+    const loadPeople = async () => {
+      setIsLoading(true)
+      setErrorMessage('')
+      try {
+        const response = await fetch(endpoint, { signal: controller.signal })
+        if (!response.ok) {
+          throw new Error('Request failed')
+        }
+        const data = await response.json()
+        const items = Array.isArray(data) ? data : data?.results ?? []
+        setPeople(items)
+        setCurrentPage(1)
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          return
+        }
+        setPeople([])
+        setErrorMessage('Unable to load people.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadPeople()
+
+    return () => controller.abort()
+  }, [sortFilter])
 
   const handlePrev = () => {
     setCurrentPage((prev) => Math.max(1, prev - 1))
@@ -42,17 +91,14 @@ function PersonDatabase() {
           <div className="person__card-header">
             <div className="person__filters" aria-label="Filters">
               <label className="person__filter">
-                Date Added
-                <select className="person__select" defaultValue="recent">
-                  <option value="recent">Most recent</option>
-                  <option value="oldest">Oldest first</option>
-                </select>
-              </label>
-              <label className="person__filter">
-                Alphabetical
-                <select className="person__select" defaultValue="az">
-                  <option value="az">A to Z</option>
-                  <option value="za">Z to A</option>
+                Sort
+                <select
+                  className="person__select"
+                  value={sortFilter}
+                  onChange={(event) => setSortFilter(event.target.value)}
+                >
+                  <option value="last_modified">Last modified</option>
+                  <option value="alphabetical">Alphabetical</option>
                 </select>
               </label>
               <label className="person__filter">
@@ -69,6 +115,11 @@ function PersonDatabase() {
               Page {currentPage} of {totalPages}
             </span>
           </div>
+
+          {isLoading ? <p className="home__status">Loading people…</p> : null}
+          {!isLoading && errorMessage ? (
+            <p className="home__status home__status--error">{errorMessage}</p>
+          ) : null}
 
           <div className="home__latest-grid person__grid">
             {pageItems.map((person) => (
