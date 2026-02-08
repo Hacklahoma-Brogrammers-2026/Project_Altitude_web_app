@@ -336,13 +336,13 @@ def relabel_utterances_with_user(
 def process_audio(file_path: str, user: User) -> list[Utterance]:
     utterances = convert_raw_audio_to_utterances(file_path)
 
-    if user.audio_sample_path is None:
+    user_audio_path = f"./backend/data/audio/{user.user_id}.wav"
+    if not Path(user_audio_path).exists():
         raise ValueError("Speaker needs to have an audio sample")
-    speaker_reference_file = user.audio_sample_path
     best_label, scores = score_speakers_against_reference(
         full_audio_path=file_path,
         utterances=utterances,
-        reference_sample_path=speaker_reference_file
+        reference_sample_path=user_audio_path
     )
 
     relabeled_utterances = relabel_utterances_with_user(

@@ -19,6 +19,8 @@ dependencies:
   - cpuonly
   - ffmpeg
   - pydub
+  - portaudio
+  - pyaudio
 
   # 3. Pip dependencies
   # We use pip to install the rest, including the face_recognition wrapper
@@ -40,3 +42,4 @@ dependencies:
     - assemblyai[extras]
     - elevenlabs
     - git+https://github.com/speechbrain/speechbrain.git
+    - sounddevice

@@ -6,7 +6,7 @@ This document describes the HTTP requests the frontend currently makes and the J
 
 The frontend uses `VITE_API_BASE_URL` when set; otherwise, it calls the same origin.
 
-## GET /api/getPerson/:id
+## GET /person/:id
 
 Fetch a single contact by ID for the Profile page.
 

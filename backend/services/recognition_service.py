@@ -3,12 +3,14 @@ import cv2
 import face_recognition
 import numpy as np
 import uuid
+import traceback
 from typing import List, Dict, Any, Tuple
-from .storage import PersonRepository, JsonPersonRepository, Person
+from .storage import PersonRepository, Contact
+from repos import contact_repo
 
 class FaceService:
     def __init__(self, storage: PersonRepository = None, images_dir: str = "data/faces"):
-        self.storage = storage or JsonPersonRepository(data_file="data/people.json")
+        self.storage = storage 
         self.images_dir = images_dir
         
         # Ensure the directory exists (Service level check)
@@ -18,20 +20,39 @@ class FaceService:
         # In-memory caches for fast recognition
         self.known_face_encodings: List[np.ndarray] = []
         self.known_face_ids: List[str] = []
-        self.known_face_metadata: Dict[str, Person] = {}
+        self.known_face_metadata: Dict[str, Contact] = {}
+        self.current_user_id = None
+        self.last_recognized_id: str | None = None
 
+        # self._load_from_storage() # Do not load at init, wait for user login
+
+    def set_current_user(self, user_id: str):
+        self.current_user_id = user_id
+        print(f"FaceService: current user set to {user_id}")
         self._load_from_storage()
 
     def _load_from_storage(self) -> None:
-        """Loads all people from the repository into memory."""
-        people = self.storage.get_all()
-        print(f"Loading {len(people)} people from storage...")
+        """Loads all people from the repository into memory for CURRENT USER."""
+        if not self.current_user_id:
+             print("FaceService: No user logged in, clearing cache.")
+             self.known_face_encodings = []
+             self.known_face_ids = []
+             self.known_face_metadata = {}
+             return
+
+        people = self.storage.get_all(user_id=self.current_user_id)
+        print(f"Loading {len(people)} people from storage for user {self.current_user_id}...")
         
+        # Reset cache
+        self.known_face_encodings = []
+        self.known_face_ids = []
+        self.known_face_metadata = {}
+
         for person in people:
             if person.encoding:
                 self.known_face_encodings.append(np.array(person.encoding))
-                self.known_face_ids.append(person.id)
-                self.known_face_metadata[person.id] = person
+                self.known_face_ids.append(person.contact_id)
+                self.known_face_metadata[person.contact_id] = person
 
     def update_person_details(self, person_id: str, name: str, age: int):
         """Public API to update a person's details."""
@@ -44,41 +65,69 @@ class FaceService:
         return False
 
     def _register_new_face(self, frame_rgb: np.ndarray, location: Tuple[int, int, int, int], encoding: np.ndarray):
-        """Creates a new Person entry for an unknown face."""
-        new_id = str(uuid.uuid4())
+        """Creates a new Person entry for an unknown face.
+           Now ensures DB consistency and User isolation.
+        """
         
-        # 1. Save Image Crop
-        top, right, bottom, left = location
-        # Add some padding if possible
-        h, w, _ = frame_rgb.shape
-        top = max(0, top - 20); bottom = min(h, bottom + 20)
-        left = max(0, left - 20); right = min(w, right + 20)
-        
-        face_image = frame_rgb[top:bottom, left:right]
-        # Convert back to BGR for OpenCV saving
-        face_image_bgr = cv2.cvtColor(face_image, cv2.COLOR_RGB2BGR)
-        
-        image_path = os.path.join(self.images_dir, f"{new_id}.jpg")
-        cv2.imwrite(image_path, face_image_bgr)
+        if not self.current_user_id:
+            print("WARNING: No current_user_id set. Skipping face registration.")
+            # Return a temporary person object so the UI considers it handled (but not saved)
+            # Using Dummy Contact
+            return Contact(contact_id="unsaved", owner_user_id="none", first_name="Unsaved", last_name="(Login Required)")
+            
+        try:
+            # 1. Create Contact in DB FIRST (Ground Truth)
+            print(f"Attempting to create contact for user_id: {self.current_user_id}")
+            # Note: create_contact is just a factory, it doesn't save yet in db but it validates user
+            # We want to use storage.add_person eventually, or manual repo usage.
+            # But the service logic requires specific steps.
+            
+            # Let's create the object locally
+            new_id = str(uuid.uuid4())
+            
+            # 2. Save Image Crop (Path: data/faces/{user_id}/{contact_id}.jpg)
+            top, right, bottom, left = location
+            h, w, _ = frame_rgb.shape
+            top = max(0, top - 20); bottom = min(h, bottom + 20)
+            left = max(0, left - 20); right = min(w, right + 20)
+            
+            face_image = frame_rgb[top:bottom, left:right]
+            face_image_bgr = cv2.cvtColor(face_image, cv2.COLOR_RGB2BGR)
+            
+            user_faces_dir = os.path.join(self.images_dir, self.current_user_id)
+            if not os.path.exists(user_faces_dir):
+                os.makedirs(user_faces_dir)
+            
+            relative_image_path = os.path.join(self.current_user_id, f"{new_id}.jpg")
+            full_image_path = os.path.join(self.images_dir, relative_image_path)
+            
+            cv2.imwrite(full_image_path, face_image_bgr)
 
-        # 2. Create Person Object
-        new_person = Person(
-            id=new_id,
-            name="Unknown", 
-            image_path=image_path,
-            encoding=encoding.tolist()
-        )
+            # 3. Create Contact Object (Unified)
+            new_person = Contact(
+                contact_id=new_id,
+                owner_user_id=self.current_user_id,
+                first_name="Unknown",
+                last_name="Person",
+                image_path=relative_image_path, # Store relative path or absolute? Storage was just "path"
+                encoding=encoding.tolist()
+            )
 
-        # 3. Save to Storage
-        self.storage.add_person(new_person)
+            # 4. Save to Storage (DB)
+            self.storage.add_person(new_person)
 
-        # 4. Update Memory (so we recognize them in the next frame)
-        self.known_face_encodings.append(encoding)
-        self.known_face_ids.append(new_id)
-        self.known_face_metadata[new_id] = new_person
-        
-        print(f"Registered new face: {new_id}")
-        return new_person
+            # 5. Update Memory (so we recognize them in the next frame)
+            self.known_face_encodings.append(encoding)
+            self.known_face_ids.append(new_id)
+            self.known_face_metadata[new_id] = new_person
+            
+            print(f"Registered new face: {new_id}")
+            return new_person
+
+        except Exception as e:
+            traceback.print_exc()
+            print(f"ERROR: Failed to register face: {e}")
+            return Contact(contact_id="error", owner_user_id="none", first_name="Registration", last_name="Failed")
 
     def process_frame(self, frame: np.ndarray) -> Tuple[np.ndarray, str | None]:
         """

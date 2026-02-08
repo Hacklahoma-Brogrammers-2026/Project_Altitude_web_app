@@ -5,12 +5,13 @@ import threading
 import asyncio
 import os
 
-import sounddevice as sd
 from app.core.container import container
 
 ws_router = APIRouter()
 latest_frame = None
 latest_frame_bytes = None
+last_recognition_id = None
+recognition_clients: set[WebSocket] = set()
 lock = threading.Lock()
 face_service = container.face_service
 
@@ -59,6 +60,23 @@ async def websocket_audio_debug(websocket: WebSocket):
     except WebSocketDisconnect:
         print("[INFO] Client disconnected from /ws/audio-debug")
 
+async def _broadcast_recognition(contact_id: str) -> None:
+    if not recognition_clients:
+        return
+
+    payload = {"contact_id": contact_id}
+    # print(f"[INFO] Broadcasting recognition event: {contact_id}")
+    disconnected: list[WebSocket] = []
+    # Iterate over a copy to handle set modifications during iteration
+    for client in list(recognition_clients):
+        try:
+            await client.send_json(payload)
+        except Exception:
+            disconnected.append(client)
+
+    for client in disconnected:
+        recognition_clients.discard(client)
+
 @ws_router.websocket("/ws/video-debug")
 async def websocket_debug(websocket: WebSocket):
     global latest_frame, display_thread, display_stop_event
@@ -102,7 +120,7 @@ async def websocket_debug(websocket: WebSocket):
 
 @ws_router.websocket("/ws/video-producer")
 async def websocket_producer(websocket: WebSocket):
-    global latest_frame, latest_frame_bytes
+    global latest_frame, latest_frame_bytes, last_recognition_id
     await websocket.accept()
     print("Video producer connected")
     print("Video WebSocket connected")
@@ -130,6 +148,9 @@ async def websocket_producer(websocket: WebSocket):
                 # process_frame now returns (annotated_frame, single_detected_id_or_none)
                 frame, detected_id = face_service.process_frame(frame)
                 
+                if detected_id:
+                    await _broadcast_recognition(detected_id)
+
                 success, buffer = cv2.imencode('.jpg', frame)
                 if success:
                     with lock:
@@ -156,3 +177,20 @@ async def websocket_consumer(websocket: WebSocket):
 
     except Exception as e:
         print(f"Video consumer error: {e}")
+
+@ws_router.websocket("/ws/recognition")
+async def websocket_recognition(websocket: WebSocket):
+    await websocket.accept()
+    recognition_clients.add(websocket)
+    print("Recognition WebSocket connected")
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        print(f"Recognition WebSocket error: {e}")
+    finally:
+        recognition_clients.discard(websocket)
+        print("Recognition WebSocket disconnected")

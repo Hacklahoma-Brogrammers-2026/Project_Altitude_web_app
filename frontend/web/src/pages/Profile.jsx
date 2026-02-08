@@ -28,10 +28,10 @@ const fallbackProfile = {
 
 function Profile() {
   const { id } = useParams()
-  const personId = Number(id)
+  const personId = (id ?? '').trim()
   const [openField, setOpenField] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState([])
+  const [searchResults, setSearchResults] = useState(null) // Initialize as null
   const [searchError, setSearchError] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [profileData, setProfileData] = useState(null)
@@ -76,7 +76,7 @@ function Profile() {
   }, [profileData])
 
   useEffect(() => {
-    if (Number.isNaN(personId)) {
+    if (!personId) {
       setProfileData(null)
       setProfileError('Invalid profile id.')
       setIsProfileLoading(false)
@@ -84,7 +84,7 @@ function Profile() {
     }
 
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/api/getPerson/${personId}`
+    const endpoint = `${API_BASE_URL}/person/${personId}`
 
     const loadProfile = async () => {
       setIsProfileLoading(true)
@@ -113,9 +113,9 @@ function Profile() {
   }, [personId])
 
   const normalizedResults = useMemo(() => {
-    return searchResults.map((result, index) => {
+    return (searchResults || []).map((result, index) => {
       const label = result.label ?? result.field ?? 'Result'
-      const value = result.value ?? result.summary ?? ''
+      const value = result.value ?? result.summary ?? result.content ?? ''
       const key = result.id ?? `${label}-${index}`
       return {
         key,
@@ -127,18 +127,19 @@ function Profile() {
 
   useEffect(() => {
     const trimmed = searchQuery.trim()
-    if (!trimmed || Number.isNaN(personId)) {
-      setSearchResults([])
+    if (!trimmed || !personId) {
+      setSearchResults(null) // Clear results if query is empty
       setSearchError('')
       setIsSearching(false)
       return
     }
 
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/api/profile/${personId}/search`
+    const endpoint = `${API_BASE_URL}/profile/${personId}/search`
 
     const runSearch = async () => {
       setIsSearching(true)
+      setSearchResults(null) // Reset to null while searching
       setSearchError('')
       try {
         const response = await fetch(
@@ -224,7 +225,7 @@ function Profile() {
 
               {searchQuery ? (
                 <div className="profile__chat profile__chat--inline">
-                  {!isSearching && (searchError || normalizedResults.length === 0) ? (
+                  {!isSearching && searchResults !== null && (searchError || normalizedResults.length === 0) ? (
                     <div className="profile__chat-bubble profile__chat-bubble--system">
                       No data.
                     </div>
