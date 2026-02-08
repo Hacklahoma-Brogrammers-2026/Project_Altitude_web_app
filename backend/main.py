@@ -31,7 +31,6 @@ load_dotenv()
 from backend.config import config
 
 from database.db import init_db
-init_db(
 
 # Initialize App
 app = FastAPI(title="Project Altitude API")

@@ -27,3 +27,5 @@ dependencies:
     - pymongo
     - python-dotenv
     - pydantic[email]
+    - langchain
+    - langchain-openai
