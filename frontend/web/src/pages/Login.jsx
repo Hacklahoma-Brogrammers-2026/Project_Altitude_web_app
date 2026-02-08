@@ -21,7 +21,15 @@ function Login() {
 
       if (response.ok) {
         const result = await response.json();
-        // Ideally store the token or user data in context/local storage here
+        const userName = result?.username ?? data?.email?.split('@')[0] ?? ''
+        localStorage.setItem(
+          'altitudeUser',
+          JSON.stringify({
+            id: result?.user_id ?? null,
+            username: userName,
+            email: result?.email ?? data?.email ?? '',
+          }),
+        )
         console.log("Login successful:", result);
         navigate('/home');
       } else {

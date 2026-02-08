@@ -12,6 +12,7 @@ function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [searchMode, setSearchMode] = useState('users')
+  const [userName, setUserName] = useState('')
   const navigate = useNavigate()
 
   const latestPeople = useMemo(() => {
@@ -46,6 +47,20 @@ function Home() {
     return () => controller.abort()
   }, [])
 
+  useEffect(() => {
+    const storedUser = localStorage.getItem('altitudeUser')
+    if (!storedUser) {
+      return
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser)
+      setUserName(parsed?.username ?? '')
+    } catch {
+      setUserName('')
+    }
+  }, [])
+
   const handleSubmit = (event) => {
     event.preventDefault()
     const trimmed = query.trim()
@@ -67,7 +82,7 @@ function Home() {
 
       <main className="home__content home__content--center">
         <div className="home__header-row">
-          <p className="home__greeting">Hi, Ashley!</p>
+          <p className="home__greeting">Hi, {userName.trim() || 'there'}!</p>
           <div className="home__toggle-group">
             <span className="home__toggle-label">Search mode</span>
             <div className="home__toggle" role="group" aria-label="Search mode">
