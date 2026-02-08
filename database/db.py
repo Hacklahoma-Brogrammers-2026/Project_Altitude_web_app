@@ -5,12 +5,15 @@ from pymongo.database import Database
 from pymongo.synchronous.collection import Collection
 
 class DbCollections(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
     users: Collection[Any]
     contact_notes: Collection[Any]
     contacts: Collection[Any]
 
 _client: MongoClient | None = None
-_db_collections: DbCollections | None
+_db_collections: DbCollections | None = None
 _db: Database | None = None
 
 def init_db(mongo_uri: str, db_name: str) -> None:

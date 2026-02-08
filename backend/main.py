@@ -5,10 +5,14 @@ from pathlib import Path
 # --- PATH CONFIGURATION ---
 # Get the absolute path of the 'backend' directory (where this file lives)
 backend_dir = Path(__file__).resolve().parent
+project_root = backend_dir.parent
 
 # Add it to sys.path if it's not already there
 if str(backend_dir) not in sys.path:
     sys.path.append(str(backend_dir))
+
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
 # ---------------------------
 
 import uvicorn
@@ -18,8 +22,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 # Import Routers
-# from app.api.endpoints import router as api_router
+from app.api.endpoints import router as api_router
 from app.api.websockets import ws_router
+
+# from dotenv import load_dotenv
+# load_dotenv()
+
+from backend.config import config
+
+from database.db import init_db
+init_db(config.mongo_url, config.db_name)
 
 # Initialize App
 app = FastAPI(title="Project Altitude API")
@@ -37,7 +49,7 @@ app.add_middleware(
 app.mount("/images", StaticFiles(directory="data/faces"), name="images")
 
 # 3. Register Routes
-# app.include_router(api_router)
+app.include_router(api_router)
 app.include_router(ws_router)
 
 @app.get("/")

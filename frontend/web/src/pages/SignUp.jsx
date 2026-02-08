@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 const heroImage =
   'https://www.figma.com/api/mcp/asset/1959cab6-7ed8-4936-bc2d-d8d77e028471'
 
-function Login() {
+function SignUp() {
   const navigate = useNavigate()
 
   const handleSubmit = async (event) => {
@@ -12,26 +12,35 @@ function Login() {
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData.entries());
 
+    // Backend expects 'username' but form has 'fullName'
+    const payload = {
+      username: data.fullName,
+      email: data.email,
+      password: data.password
+    };
+
+
     try {
-      const response = await fetch("http://localhost:8000/login", {
+      const response = await fetch("http://localhost:8000/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
         const result = await response.json();
-        // Ideally store the token or user data in context/local storage here
-        console.log("Login successful:", result);
-        navigate('/home');
+        console.log("Registration successful:", result);
+        // After sign up, redirect to login or home
+        navigate('/login');
       } else {
-        alert("Login failed");
+         const errorData = await response.json();
+         alert(`Registration failed: ${errorData.detail || 'Unknown error'}`);
       }
     } catch (error) {
-       console.error("Error logging in:", error);
-       alert("Error logging in");
+       console.error("Error registering:", error);
+       alert("Error registering");
     }
   }
 
@@ -44,19 +53,30 @@ function Login() {
       <main className="login__content">
         <h1 className="login__title">Altitude</h1>
 
-        <section className="login__card" aria-label="Log in">
-          <h2 className="login__card-title">Welcome Back</h2>
+        <section className="login__card" aria-label="Sign up">
+          <h2 className="login__card-title">Create Account</h2>
 
           <form className="login__form" onSubmit={handleSubmit}>
-            <label className="login__label" htmlFor="username">
-              User
+            <label className="login__label" htmlFor="fullName">
+              Full name
             </label>
             <input
               className="login__input"
-              id="username"
-              name="username"
+              id="fullName"
+              name="fullName"
               type="text"
-              autoComplete="username"
+              autoComplete="name"
+            />
+
+            <label className="login__label" htmlFor="email">
+              Email
+            </label>
+            <input
+              className="login__input"
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
             />
 
             <label className="login__label" htmlFor="password">
@@ -67,18 +87,18 @@ function Login() {
               id="password"
               name="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
             />
 
             <button className="login__button" type="submit">
-              Log In
+              Sign Up
             </button>
           </form>
 
           <p className="login__helper">
-            Don’t have an account?{' '}
-            <Link className="login__link" to="/signup">
-              Sign up
+            Already have an account?{' '}
+            <Link className="login__link" to="/login">
+              Log In
             </Link>
           </p>
         </section>
@@ -87,4 +107,4 @@ function Login() {
   )
 }
 
-export default Login
+export default SignUp
