@@ -4,14 +4,14 @@ import numpy as np
 import threading
 import asyncio
 import os
-from services.recognition_service import FaceService
-# from app.core.container import container
+# from services.recognition_service import FaceService
+from app.core.container import container
 
 ws_router = APIRouter()
 latest_frame = None
 latest_frame_bytes = None
 lock = threading.Lock()
-face_service = FaceService()
+face_service = container.face_service
 
 # We'll store the display thread and a stop event
 display_thread = None

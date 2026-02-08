@@ -17,7 +17,7 @@ class UserRegisterRequest(BaseModel):
     password: str
 
 class UserLoginRequest(BaseModel):
-    username: str
+    email: EmailStr
     password: str
 
 class UserResponse(BaseModel):
@@ -60,7 +60,7 @@ async def register(request: UserRegisterRequest):
 
 @router.post("/login", response_model=UserResponse)
 async def login(request: UserLoginRequest):
-    result = user_repo.validate_login(request.username, request.password)
+    result = user_repo.validate_login(request.email, request.password)
     
     if result.status == "USER_NOT_FOUND":
         raise HTTPException(

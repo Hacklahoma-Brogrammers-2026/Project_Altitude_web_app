@@ -40,8 +40,8 @@ def update_user(user: User) -> User:
     
 
 
-def validate_login(username: str, password: str) -> ValidatedLoginResponse:
-    user = get_user_by_username(username)
+def validate_login(email: str, password: str) -> ValidatedLoginResponse:
+    user = get_user_by_email(email)
     if user is None:
         return ValidatedLoginResponse(status="USER_NOT_FOUND")
 
@@ -55,6 +55,17 @@ def get_user_by_username(username: str) -> User | None:
     users = get_db_collections().users
     doc = users.find_one(
         {"username": username},
+        {"_id": 0}
+    )
+
+    if doc is None:
+        return None
+    return User(**doc)
+
+def get_user_by_email(email: str) -> User | None:
+    users = get_db_collections().users
+    doc = users.find_one(
+        {"email": email},
         {"_id": 0}
     )
 
