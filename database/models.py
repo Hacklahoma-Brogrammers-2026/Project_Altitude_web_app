@@ -19,7 +19,6 @@ class ContactNote(BaseModel):
     content: str
 
     last_modified: datetime
-    img_path: str | None = None
 
     embedding: list[float] | None = None
 
@@ -34,3 +33,4 @@ class Contact(BaseModel):
 
     note: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    img_path: str | None = None
