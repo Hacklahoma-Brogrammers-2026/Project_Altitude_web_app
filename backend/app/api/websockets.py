@@ -9,6 +9,7 @@ from services.recognition_service import FaceService
 
 ws_router = APIRouter()
 latest_frame = None
+latest_frame_bytes = None
 lock = threading.Lock()
 face_service = FaceService()
 
@@ -81,7 +82,7 @@ async def websocket_producer(websocket: WebSocket):
     print("Video WebSocket connected")
 
     # Reset stop_event at the start of each new connection
-    stop_event.clear()
+    stop_event = threading.Event()
 
     try:
         while not stop_event.is_set():
