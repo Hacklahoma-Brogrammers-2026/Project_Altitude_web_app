@@ -1,0 +1,25 @@
+name: altitude_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # 1. Core Python
+  - python=3.12
+  - pip
+
+  # 2. Binary Dependencies (The hardest part to install on Windows)
+  # Conda installs pre-compiled binaries for these, skipping the need for C++ compilers
+  - cmake
+  - numpy  # Installing numpy via conda is often faster/more stable for CV
+  - dlib   # This is the heavy lifter that usually breaks pip on Windows
+
+  # 3. Pip dependencies
+  # We use pip to install the rest, including the face_recognition wrapper
+  - pip:
+    - fastapi
+    - uvicorn[standard]
+    - pydantic
+    - python-multipart
+    - websockets
+    - opencv-python
+    - face_recognition
