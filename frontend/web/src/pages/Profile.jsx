@@ -31,7 +31,7 @@ function Profile() {
   const personId = (id ?? '').trim()
   const [openField, setOpenField] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState([])
+  const [searchResults, setSearchResults] = useState(null) // Initialize as null
   const [searchError, setSearchError] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [profileData, setProfileData] = useState(null)
@@ -113,7 +113,7 @@ function Profile() {
   }, [personId])
 
   const normalizedResults = useMemo(() => {
-    return searchResults.map((result, index) => {
+    return (searchResults || []).map((result, index) => {
       const label = result.label ?? result.field ?? 'Result'
       const value = result.value ?? result.summary ?? result.content ?? ''
       const key = result.id ?? `${label}-${index}`
@@ -128,7 +128,7 @@ function Profile() {
   useEffect(() => {
     const trimmed = searchQuery.trim()
     if (!trimmed || !personId) {
-      setSearchResults([])
+      setSearchResults(null) // Clear results if query is empty
       setSearchError('')
       setIsSearching(false)
       return
@@ -139,6 +139,7 @@ function Profile() {
 
     const runSearch = async () => {
       setIsSearching(true)
+      setSearchResults(null) // Reset to null while searching
       setSearchError('')
       try {
         const response = await fetch(
@@ -224,7 +225,7 @@ function Profile() {
 
               {searchQuery ? (
                 <div className="profile__chat profile__chat--inline">
-                  {!isSearching && (searchError || normalizedResults.length === 0) ? (
+                  {!isSearching && searchResults !== null && (searchError || normalizedResults.length === 0) ? (
                     <div className="profile__chat-bubble profile__chat-bubble--system">
                       No data.
                     </div>

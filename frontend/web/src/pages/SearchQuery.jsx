@@ -1,5 +1,5 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { normalizePerson } from '../utils/transform'
 import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
 import { searchUsers, searchInfo } from '../utils/api'
@@ -7,17 +7,32 @@ import { searchUsers, searchInfo } from '../utils/api'
 function SearchQuery() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [query, setQuery] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
-  const [results, setResults] = useState([])
-  const [errorMessage, setErrorMessage] = useState('')
   const queryParam = searchParams.get('q') ?? ''
   const modeParam = searchParams.get('mode') ?? 'users'
   const searchMode = modeParam === 'info' ? 'info' : 'users'
+  
+  const [query, setQuery] = useState('')
+  // Initialize isSearching to true if there's a query param, so it shows immediately on mount
+  const [isSearching, setIsSearching] = useState(!!queryParam)
+  const [results, setResults] = useState(null) // Initialize as null to indicate "not fetched"
+  const [errorMessage, setErrorMessage] = useState('')
 
   const normalizedResults = useMemo(() => {
-    return results.map(normalizePerson)
+    return (results || []).map(normalizePerson)
   }, [results])
+
+  // Ensure loading state is active immediately when constraints change
+  // This prevents a "flash" of empty state before the fetch effect kicks in
+  useLayoutEffect(() => {
+    if (queryParam.trim()) {
+      setIsSearching(true)
+      // When query changes, reset results to null to prevent "No results" from showing based on old data
+      // or during the loading phase.
+      if (queryParam !== query) { 
+         setResults(null)
+      }
+    }
+  }, [queryParam, searchMode])
 
   useEffect(() => {
     setQuery(queryParam)
@@ -116,7 +131,7 @@ function SearchQuery() {
           {errorMessage ? (
             <p className="home__status home__status--error">{errorMessage}</p>
           ) : null}
-          {!errorMessage && !isSearching && queryParam.trim() &&
+          {!errorMessage && !isSearching && results !== null && queryParam.trim() &&
           normalizedResults.length === 0 ? (
             <p className="home__status">No results found.</p>
           ) : null}

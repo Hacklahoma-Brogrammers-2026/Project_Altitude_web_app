@@ -10,6 +10,7 @@ function Home() {
   const [query, setQuery] = useState('')
   const [people, setPeople] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false) // Added new state
   const [errorMessage, setErrorMessage] = useState('')
   const [searchMode, setSearchMode] = useState('users')
   const [userName, setUserName] = useState('')
@@ -67,11 +68,19 @@ function Home() {
     if (!trimmed) {
       return
     }
-    navigate(
-      `/search?q=${encodeURIComponent(trimmed)}&mode=${encodeURIComponent(
-        searchMode,
-      )}`,
-    )
+    // Show progress bar immediately
+    setIsSubmitting(true)
+    
+    // Slight delay to allow the UI to update and show the progress bar before navigating
+    // This gives the user visual feedback that the action has been registered
+    setTimeout(() => {
+      navigate(
+        `/search?q=${encodeURIComponent(trimmed)}&mode=${encodeURIComponent(
+          searchMode,
+        )}`,
+      )
+      // We don't need to set isSubmitting(false) because the component unmounts
+    }, 50)
   }
 
   return (
@@ -123,6 +132,7 @@ function Home() {
           <button className="home__search-button" type="submit">
             &gt;
           </button>
+          {isSubmitting ? <span className="home__search-progress" /> : null}
         </form>
 
         <section className="home__card" aria-label="Latest Data">

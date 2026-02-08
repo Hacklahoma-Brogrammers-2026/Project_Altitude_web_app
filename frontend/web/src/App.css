@@ -412,6 +412,21 @@
   background: #cbd6ea;
   border-radius: 999px;
   animation: search-progress 900ms ease-in-out infinite;
+  z-index: 10; /* Force it on top */
+}
+
+@keyframes search-progress {
+  0% {
+    left: 0;
+    width: 0;
+  }
+  50% {
+    width: 60%;
+  }
+  100% {
+    left: 100%;
+    width: 0;
+  }
 }
 
 .home__results-progress {
