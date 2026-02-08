@@ -6,6 +6,7 @@ from typing import List
 from pydantic import BaseModel, EmailStr
 from backend.services.audio_embedding_service import AUDIO_FILE_DIR
 from backend.services.audio_transcription_service import process_audio
+from backend.services.note_taker_service import take_notes
 from services.storage import Person
 from app.core.container import container
 from repos import user_repo
@@ -66,7 +67,7 @@ async def register(request: UserRegisterRequest):
 @router.post("/login", response_model=UserResponse)
 async def login(request: UserLoginRequest):
     result = user_repo.validate_login(request.email, request.password)
-    
+
     if result.status == "USER_NOT_FOUND":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -79,6 +80,8 @@ async def login(request: UserLoginRequest):
         )
     
     if result.status == "SUCCESS" and result.user:
+        with open("./backend/most_recent_login_id.txt", "w") as f:
+            f.write(result.user.user_id)
         return UserResponse(
             user_id=result.user.user_id,
             username=result.user.username,
@@ -88,7 +91,7 @@ async def login(request: UserLoginRequest):
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unknown login error")
 
 @router.post("/process-audio")
-async def analyze_audio(audio: UploadFile = File(...), background: BackgroundTasks = BackgroundTasks()):
+async def analyze_audio(audio: UploadFile = File(...), contact_id: str = "", background: BackgroundTasks = BackgroundTasks()):
     if audio.filename is None:
         raise HTTPException(
             status_code=400,
@@ -113,7 +116,9 @@ async def analyze_audio(audio: UploadFile = File(...), background: BackgroundTas
             detail=f"Error: {e}"
         )
 
-    background.add_task(process_audio, str(dest_path))
+    with open("./backend/most_recent_login_id.txt", 'r') as f:
+        user_id = f.readline()
+    background.add_task(take_notes, str(dest_path), user_id, contact_id)
 
     return 
 

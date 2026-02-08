@@ -8,7 +8,7 @@ from pymongo.operations import SearchIndexModel
 # Add backend to path to import config if not installed as package
 sys.path.append(os.path.join(os.path.dirname(__file__), '../backend'))
 
-from config import config
+from backend.config import config
 
 load_dotenv()
 

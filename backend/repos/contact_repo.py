@@ -26,6 +26,17 @@ def save_contact_to_database(contact: Contact) -> Contact:
 
     return contact
 
+def get_contact_by_contact_id(contact_id: str) -> Contact | None:
+    contacts =get_db_collections().contacts
+    doc = contacts.find_one(
+        {"contact_id": contact_id},
+        {"_id": 0}
+    )
+
+    if doc is None:
+        return None
+    return Contact(**doc)
+
 def update_contact(contact: Contact) -> Contact:
     updates = contact.model_dump()
     updates.pop("contact_id")
