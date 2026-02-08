@@ -26,7 +26,9 @@ function AppLayout() {
         aria-label="Primary"
       >
         <div className="app-nav__top">
-          <div className="app-nav__brand">Altitude</div>
+          <NavLink className="app-nav__brand" to="/home" onClick={handleNavClick}>
+            Altitude
+          </NavLink>
           <button
             className="app-nav__toggle"
             type="button"

@@ -168,8 +168,9 @@
   justify-content: space-between;
   padding: 1rem 2rem;
   gap: 1.5rem;
-  position: relative;
-  z-index: 2;
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 .app-nav__brand {
@@ -177,6 +178,7 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   color: #344153;
+  text-decoration: none;
 }
 
 .app-nav__top {
@@ -290,6 +292,8 @@
 .home__content--center {
   min-height: calc(100vh - 120px);
   justify-content: center;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
 .home__title {
@@ -870,6 +874,7 @@
 
   .home__content {
     width: min(92vw, 720px);
+    padding-top: 3.5rem;
   }
 
   .home__row {
