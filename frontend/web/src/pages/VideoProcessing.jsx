@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
-const UPLOAD_AUDIO_ENDPOINT = `${API_BASE_URL}/uploadAudio` // Added this
+const UPLOAD_AUDIO_ENDPOINT = `http://192.168.137.1:8000/uploadAudio` // Added this
 
 const getWebSocketUrl = () => {
   if (typeof window === 'undefined') {
@@ -110,7 +110,7 @@ function VideoProcessing() {
       lastRecognizedIdRef.current = contactId
 
       try {
-        const response = await fetch(`${API_BASE_URL}/person/${contactId}`)
+        const response = await fetch(`http://192.168.137.1:8000/person/${contactId}`)
         if (!response.ok) {
           throw new Error('Recognition lookup failed')
         }

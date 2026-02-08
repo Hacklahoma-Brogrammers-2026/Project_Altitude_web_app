@@ -17,7 +17,7 @@ export function normalizePerson(person, index = 0) {
     
     // Clean up potentially absolute paths (fallback)
     const cleanPath = person.image_path.split('data/faces/').pop();
-    avatar = `${API_BASE_URL}/images/${cleanPath}`
+    avatar = `http://192.168.137.1:8000/images/${cleanPath}`
   }
 
   const relation = person.label ?? person.relation ?? person.group ?? 'Person'

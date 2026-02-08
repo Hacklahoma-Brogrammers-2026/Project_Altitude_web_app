@@ -84,7 +84,7 @@ function Profile() {
     }
 
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/person/${personId}`
+    const endpoint = `http://192.168.137.1:8000/person/${personId}`
 
     const loadProfile = async () => {
       setIsProfileLoading(true)
@@ -135,7 +135,7 @@ function Profile() {
     }
 
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/profile/${personId}/search`
+    const endpoint = `http://192.168.137.1:8000/profile/${personId}/search`
 
     const runSearch = async () => {
       setIsSearching(true)
