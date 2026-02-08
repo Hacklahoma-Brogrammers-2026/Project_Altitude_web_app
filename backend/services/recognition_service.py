@@ -80,7 +80,11 @@ class FaceService:
         print(f"Registered new face: {new_id}")
         return new_person
 
-    def process_frame(self, frame: np.ndarray) -> np.ndarray:
+    def process_frame(self, frame: np.ndarray) -> Tuple[np.ndarray, str | None]:
+        """
+        Processes a video frame, detects faces, draws bounding boxes/labels,
+        and returns the annotated frame plus a SINGLE detected person ID (strongest match).
+        """
         # Resize to 1/4 for performance
         small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
         rgb_small_frame = np.ascontiguousarray(small_frame[:, :, ::-1])
@@ -89,11 +93,17 @@ class FaceService:
         face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
 
         face_display_data = []
+        
+        # Track the best candidate found in this frame
+        strongest_person_id = None
+        lowest_distance_found = 1.0 
 
         for location, encoding in zip(face_locations, face_encodings):
             name = "Unknown"
             access_label = "Detecting..."
             color = (255, 165, 0) # Orange for uncertain
+            current_id = None
+            is_strong_match = False
             
             # 1. Calculate distances to ALL known faces (including previously auto-saved ones)
             if self.known_face_encodings:
@@ -112,11 +122,12 @@ class FaceService:
                 name = person_obj.name
                 access_label = f"Age: {person_obj.age}" if person_obj.age else "Verified"
                 color = (0, 255, 0) # Green
+                
+                current_id = person_id
+                is_strong_match = True
 
             elif min_distance < 0.75:
                 # WEAK MATCH / AMBIGUOUS -> Do NOT save distinct entry
-                # This prevents creating "Person #2" just because "Person #1" turned their head.
-                # We assume it's the closest match but don't officially log it or create new junk data.
                 if self.known_face_ids:
                     person_id = self.known_face_ids[best_match_index]
                     possible_name = self.known_face_metadata[person_id].name
@@ -132,6 +143,20 @@ class FaceService:
                 name = new_person.name 
                 access_label = "New Entry Saved"
                 color = (0, 0, 255) # Red
+                
+                current_id = new_person.contact_id
+
+            # Update Best Match Logic
+            if current_id:
+                if is_strong_match:
+                    # If this is a strong match, and it's better than previous strong matches
+                    if min_distance < lowest_distance_found:
+                        lowest_distance_found = min_distance
+                        strongest_person_id = current_id
+                else:
+                    # It's a new registration. Use it if we don't have a strong match yet.
+                    if strongest_person_id is None:
+                        strongest_person_id = current_id
 
             face_display_data.append((location, name, access_label, color))
 
@@ -143,4 +168,4 @@ class FaceService:
             cv2.putText(frame, name, (left + 6, bottom - 15), cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
             cv2.putText(frame, label, (left + 6, bottom - 2), cv2.FONT_HERSHEY_DUPLEX, 0.4, (200, 200, 200), 1)
 
-        return frame
+        return frame, strongest_person_id

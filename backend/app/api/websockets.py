@@ -98,16 +98,20 @@ async def websocket_producer(websocket: WebSocket):
 
             nparr = np.frombuffer(data, np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            detected_id = None
+
             if frame is not None:
                 # Add overlays/labels before streaming to consumers
-                frame = face_service.process_frame(frame)
+                # process_frame now returns (annotated_frame, single_detected_id_or_none)
+                frame, detected_id = face_service.process_frame(frame)
+                
                 success, buffer = cv2.imencode('.jpg', frame)
                 if success:
                     with lock:
                         latest_frame = frame
                         latest_frame_bytes = buffer.tobytes()
 
-            await websocket.send_text("ack")
+            await websocket.send_text(detected_id if detected_id else "No Person")
 
     except Exception as e:
         print(f"Video producer error: {e}")
