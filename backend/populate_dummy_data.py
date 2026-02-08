@@ -17,6 +17,7 @@ if str(project_root) not in sys.path:
 from backend.config import config
 from database.db import init_db, get_db_collections
 from database.models import Contact, ContactNote
+from repos.contact_note_repo import create_contact_note, save_contact_note_to_database
 
 # Initialize DB
 print(f"Connecting to database: {config.db_name}...")
@@ -80,7 +81,6 @@ def generate_dummy_data(user_id, count=5):
 def generate_dummy_notes(user_id):
     """Generates dummy ContactNotes for ALL existing contacts of a user."""
     contacts_coll = get_db_collections().contacts
-    notes_coll = get_db_collections().contact_notes
     
     cursor = contacts_coll.find({"owner_user_id": user_id})
     contacts = list(cursor)
@@ -107,18 +107,14 @@ def generate_dummy_notes(user_id):
             num_notes = random.randint(1, 3)
             
         for _ in range(num_notes):
-            note = ContactNote(
-                note_id=str(uuid.uuid4()),
-                user_id=user_id,
-                contact_id=c_id,
-                label=get_random_value("note_label"),
-                content=get_random_value("note"),
-                last_modified=datetime.now(timezone.utc)
-                # embedding left mostly None for now unless we mocked it, which is complex here
-            )
-            
             try:
-                notes_coll.insert_one(note.model_dump())
+                note = create_contact_note(
+                    user_id=user_id,
+                    contact_id=c_id,
+                    label=get_random_value("note_label"),
+                    content=get_random_value("note"),
+                )
+                save_contact_note_to_database(note)
                 created_count += 1
             except Exception as e:
                 print(f"  [-] Error creating note for {c_name}: {e}")
