@@ -49,7 +49,7 @@ app.add_middleware(
 )
 
 # 2. Static Files (Images)
-app.mount("/images", StaticFiles(directory="data/faces"), name="images")
+app.mount("/images", StaticFiles(directory="./backend/data/faces"), name="images")
 
 # 3. Register Routes
 app.include_router(api_router)
