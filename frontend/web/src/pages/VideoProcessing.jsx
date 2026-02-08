@@ -30,18 +30,6 @@ const getRecognitionWebSocketUrl = () => {
   return `${protocol}://192.168.137.1:8000/ws/recognition`
 }
 
-const getRecognitionWebSocketUrl = () => {
-  if (typeof window === 'undefined') {
-    return ''
-  }
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-  const apiBase = import.meta.env.VITE_API_BASE || ''
-  if (apiBase) {
-    const normalized = apiBase.replace(/^http/, 'ws').replace(/\/$/, '')
-    return `${normalized}/ws/recognition`
-  }
-  return `${protocol}://${window.location.hostname}:8000/ws/recognition`
-}
 
 function VideoProcessing() {
   const [frameSrc, setFrameSrc] = useState('')
