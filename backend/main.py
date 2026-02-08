@@ -25,12 +25,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import router as api_router
 from app.api.websockets import ws_router
 
-from dotenv import load_dotenv
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 
 from backend.config import config
 
 from database.db import init_db
+init_db(config.mongo_url, config.db_name)
 
 # Initialize App
 app = FastAPI(title="Project Altitude API")
