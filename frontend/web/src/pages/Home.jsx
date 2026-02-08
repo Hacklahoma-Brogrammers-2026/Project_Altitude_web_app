@@ -1,19 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
+import { latestPeople } from '../data/people.js'
 
 const heroImage =
   'https://www.figma.com/api/mcp/asset/55c25fd1-e61b-4263-a50f-2ba9d4e4bc55'
 const avatarPlaceholder =
   'https://www.figma.com/api/mcp/asset/e1cc52ac-9fe1-43fd-9bcf-79865cf93c24'
-
-const latestRows = [
-  { id: 1, name: 'First Last' },
-  { id: 2, name: 'First Last' },
-  { id: 3, name: 'First Last' },
-  { id: 4, name: 'First Last' },
-  { id: 5, name: 'First Last' },
-  { id: 6, name: 'First Last' },
-]
 
 function Home() {
   const [query, setQuery] = useState('')
@@ -76,16 +68,20 @@ function Home() {
           </div>
 
           <div className="home__latest-grid">
-            {latestRows.map((row) => (
-              <div className="home__latest-item" key={row.id}>
+            {latestPeople.map((row) => (
+              <Link
+                className="home__latest-item home__latest-link"
+                key={row.id}
+                to={`/profile/${row.id}`}
+              >
                 <img
                   className="home__latest-avatar"
-                  src={avatarPlaceholder}
+                  src={row.avatar || avatarPlaceholder}
                   alt=""
                   aria-hidden="true"
                 />
                 <span className="home__latest-name">{row.name}</span>
-              </div>
+              </Link>
             ))}
           </div>
         </section>

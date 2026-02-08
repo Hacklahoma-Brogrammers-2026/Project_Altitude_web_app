@@ -4,6 +4,7 @@ import './App.css'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import PersonDatabase from './pages/PersonDatabase.jsx'
+import Profile from './pages/Profile.jsx'
 import SearchQuery from './pages/SearchQuery.jsx'
 import VideoFeedback from './pages/VideoFeedback.jsx'
 
@@ -84,6 +85,7 @@ function App() {
       <Route element={<AppLayout />}>
         <Route path="/home" element={<Home />} />
         <Route path="/people" element={<PersonDatabase />} />
+        <Route path="/profile/:id" element={<Profile />} />
         <Route path="/search" element={<SearchQuery />} />
         <Route path="/video-feedback" element={<VideoFeedback />} />
       </Route>

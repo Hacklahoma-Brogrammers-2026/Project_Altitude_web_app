@@ -1,14 +1,34 @@
+import { Link } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { people } from '../data/people.js'
+
 const heroImage =
   'https://www.figma.com/api/mcp/asset/55c25fd1-e61b-4263-a50f-2ba9d4e4bc55'
 const avatarPlaceholder =
   'https://www.figma.com/api/mcp/asset/e1cc52ac-9fe1-43fd-9bcf-79865cf93c24'
 
-const people = Array.from({ length: 24 }, (_, index) => ({
-  id: index + 1,
-  name: 'First Last',
-}))
-
 function PersonDatabase() {
+  const pageSize = 15
+  const totalPages = Math.max(1, Math.ceil(people.length / pageSize))
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const pageItems = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return people.slice(start, start + pageSize)
+  }, [currentPage])
+
+  const handlePrev = () => {
+    setCurrentPage((prev) => Math.max(1, prev - 1))
+  }
+
+  const handleNext = () => {
+    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+  }
+
+  const handlePageSelect = (page) => {
+    setCurrentPage(page)
+  }
+
   return (
     <div className="home person">
       <div className="home__bg" aria-hidden="true">
@@ -45,34 +65,60 @@ function PersonDatabase() {
                 </select>
               </label>
             </div>
-            <span className="person__page-count">Page 1 of 4</span>
+            <span className="person__page-count">
+              Page {currentPage} of {totalPages}
+            </span>
           </div>
 
           <div className="home__latest-grid person__grid">
-            {people.map((person) => (
-              <div className="home__latest-item" key={person.id}>
+            {pageItems.map((person) => (
+              <Link
+                className="home__latest-item home__latest-link"
+                key={person.id}
+                to={`/profile/${person.id}`}
+              >
                 <img
                   className="home__latest-avatar"
-                  src={avatarPlaceholder}
+                  src={person.avatar || avatarPlaceholder}
                   alt=""
                   aria-hidden="true"
                 />
                 <span className="home__latest-name">{person.name}</span>
-              </div>
+              </Link>
             ))}
           </div>
 
           <div className="person__pagination">
-            <button className="person__page-button" type="button" disabled>
+            <button
+              className="person__page-button"
+              type="button"
+              onClick={handlePrev}
+              disabled={currentPage === 1}
+            >
               Previous
             </button>
-            <div className="person__page-dots" aria-hidden="true">
-              <span className="person__page-dot person__page-dot--active" />
-              <span className="person__page-dot" />
-              <span className="person__page-dot" />
-              <span className="person__page-dot" />
+            <div className="person__page-dots" aria-label="Page selector">
+              {Array.from({ length: totalPages }, (_, index) => {
+                const page = index + 1
+                const isActive = page === currentPage
+                return (
+                  <button
+                    key={page}
+                    className={`person__page-dot${isActive ? ' person__page-dot--active' : ''}`}
+                    type="button"
+                    aria-pressed={isActive}
+                    aria-label={`Go to page ${page}`}
+                    onClick={() => handlePageSelect(page)}
+                  />
+                )
+              })}
             </div>
-            <button className="person__page-button" type="button">
+            <button
+              className="person__page-button"
+              type="button"
+              onClick={handleNext}
+              disabled={currentPage === totalPages}
+            >
               Next
             </button>
           </div>

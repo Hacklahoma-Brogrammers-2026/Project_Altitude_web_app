@@ -1,19 +1,11 @@
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
+import { searchResults } from '../data/people.js'
 
 const heroImage =
   'https://www.figma.com/api/mcp/asset/5209dc40-ce81-4fc3-9083-2774e5934491'
 const avatarPlaceholder =
   'https://www.figma.com/api/mcp/asset/b0db9ac1-bd8f-4d55-97c9-c6dce409929a'
-
-const results = [
-  { id: 1, name: 'First Last', relation: 'Relationship' },
-  { id: 2, name: 'First Last', relation: 'Relationship' },
-  { id: 3, name: 'First Last', relation: 'Relationship' },
-  { id: 4, name: 'First Last', relation: 'Relationship' },
-  { id: 5, name: 'First Last', relation: 'Relationship' },
-  { id: 6, name: 'First Last', relation: 'Relationship' },
-]
 
 function SearchQuery() {
   const [searchParams] = useSearchParams()
@@ -80,20 +72,22 @@ function SearchQuery() {
           <h2 className="home__card-title">People</h2>
 
           <div className="home__rows">
-            {results.map((row) => (
-              <div className="home__row" key={row.id}>
+            {searchResults.map((row) => (
+              <Link
+                className="home__row home__row-link"
+                key={row.id}
+                to={`/profile/${row.id}`}
+              >
                 <img
                   className="home__avatar"
-                  src={avatarPlaceholder}
+                  src={row.avatar || avatarPlaceholder}
                   alt=""
                   aria-hidden="true"
                 />
                 <span className="home__row-name">{row.name}</span>
                 <span className="home__row-relation">{row.relation}</span>
-                <button className="home__row-more" type="button">
-                  More +
-                </button>
-              </div>
+                <span className="home__row-more">More +</span>
+              </Link>
             ))}
           </div>
         </section>
