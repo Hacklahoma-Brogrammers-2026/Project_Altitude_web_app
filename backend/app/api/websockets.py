@@ -8,41 +8,23 @@ from services.recognition_service import FaceService
 # from app.core.container import container
 
 ws_router = APIRouter()
-
-@ws_router.websocket("/ws/debug")
-async def ws_debug(websocket: WebSocket):
-    await websocket.accept()
-    print("Debug WebSocket connected")
-    try:
-        while True:
-            data = await websocket.receive_text()
-            print(f"Received from Pi: {data}")
-            await websocket.send_text("ack")
-    except WebSocketDisconnect:
-        print("Debug WebSocket disconnected")
-    except Exception as e:
-        print(f"Error in debug websocket: {e}")
-
 latest_frame = None
 latest_frame_bytes = None
 lock = threading.Lock()
 stop_event = threading.Event()  # shared stop signal
 face_service = FaceService()
 
-def display_loop():
+async def display_loop():
     global latest_frame
-    print("Display loop started. Press 'q' to exit.")
-    while not stop_event.is_set():
-        with lock:
-            frame = latest_frame
-        if frame is not None:
-            cv2.imshow("Video Stream", frame)
-        # Press 'q' locally to stop
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            stop_event.set()
-            break
+    while True:
+        await asyncio.sleep(0.01)  # prevent busy loop
+        if latest_frame is not None:
+            frame_copy = latest_frame.copy()
+            cv2.imshow("Video Stream", frame_copy)
+            # This is REQUIRED for the window to update
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
     cv2.destroyAllWindows()
-    print("Display loop exited")
 
 
 if os.getenv("DISPLAY_STREAM") == "1":
@@ -55,6 +37,10 @@ async def websocket_producer(websocket: WebSocket):
     global latest_frame, latest_frame_bytes
     await websocket.accept()
     print("Video producer connected")
+    print("Video WebSocket connected")
+
+    # Reset stop_event at the start of each new connection
+    stop_event.clear()
 
     try:
         while not stop_event.is_set():
@@ -65,6 +51,7 @@ async def websocket_producer(websocket: WebSocket):
                 break
             except Exception:
                 print("WebSocket disconnected")
+                stop_event.set()  # stop this loop
                 break
 
             nparr = np.frombuffer(data, np.uint8)
