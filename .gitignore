@@ -3,3 +3,5 @@
 **/.vscode/
 database/init/**/venv/
 .venv
+.idea
+backend/data/
