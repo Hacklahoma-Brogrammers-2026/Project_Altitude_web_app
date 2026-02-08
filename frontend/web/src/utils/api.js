@@ -23,3 +23,33 @@ export async function fetchPeople({ signal, sort = 'last_modified' } = {}) {
   const data = await response.json()
   return Array.isArray(data) ? data : data?.results ?? [] 
 }
+
+/**
+ * Search for users by name.
+ * @param {string} query 
+ * @param {AbortSignal} [signal]
+ */
+export async function searchUsers(query, signal) {
+  const endpoint = `${API_BASE_URL}/searchUser?q=${encodeURIComponent(query)}`
+  const response = await fetch(endpoint, { signal })
+  if (!response.ok) {
+    throw new Error(`Search failed: ${response.status}`)
+  }
+  const data = await response.json()
+  return data.results ?? []
+}
+
+/**
+ * Semantic search for info/notes.
+ * @param {string} query 
+ * @param {AbortSignal} [signal]
+ */
+export async function searchInfo(query, signal) {
+  const endpoint = `${API_BASE_URL}/searchInfo?q=${encodeURIComponent(query)}`
+  const response = await fetch(endpoint, { signal })
+  if (!response.ok) {
+    throw new Error(`Search failed: ${response.status}`)
+  }
+  const data = await response.json()
+  return data.results ?? []
+}

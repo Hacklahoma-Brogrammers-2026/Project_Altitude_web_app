@@ -16,7 +16,7 @@ if str(project_root) not in sys.path:
 
 from backend.config import config
 from database.db import init_db, get_db_collections
-from database.models import Contact
+from database.models import Contact, ContactNote
 
 # Initialize DB
 print(f"Connecting to database: {config.db_name}...")
@@ -32,6 +32,7 @@ RANDOM_NOTES = [
     "Family friend.",
     "Unknown connection."
 ]
+RANDOM_NOTE_LABELS = ["Meeting", "Personal", "Work", "Reminder", "Important", "Idea"]
 RANDOM_FIRST_NAMES = ["Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah", "Ian", "Julia"]
 RANDOM_LAST_NAMES = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez"]
 
@@ -39,6 +40,7 @@ RANDOM_LAST_NAMES = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia",
 def get_random_value(field):
     if field == "age": return random.randint(18, 90)
     if field == "note": return random.choice(RANDOM_NOTES)
+    if field == "note_label": return random.choice(RANDOM_NOTE_LABELS)
     if field == "first_name": return random.choice(RANDOM_FIRST_NAMES)
     if field == "last_name": return random.choice(RANDOM_LAST_NAMES)
     if field == "last_modified": return datetime.now(timezone.utc)
@@ -74,6 +76,56 @@ def generate_dummy_data(user_id, count=5):
             print(f"  [-] Error creating {fname}: {e}")
 
     print(f"Done. {created_count} contacts added.")
+
+def generate_dummy_notes(user_id):
+    """Generates dummy ContactNotes for ALL existing contacts of a user."""
+    contacts_coll = get_db_collections().contacts
+    notes_coll = get_db_collections().contact_notes
+    
+    cursor = contacts_coll.find({"owner_user_id": user_id})
+    contacts = list(cursor)
+    
+    if not contacts:
+        print("No contacts found for this user.")
+        return
+
+    print(f"\nFound {len(contacts)} contacts. Generating notes...")
+    
+    # Options
+    print("1. Add 1 note per contact")
+    print("2. Add random number (1-3) of notes per contact")
+    choice = input("Choice: ").strip()
+    
+    created_count = 0
+    
+    for doc in contacts:
+        c_id = doc["contact_id"]
+        c_name = f"{doc.get('first_name', '')} {doc.get('last_name', '')}".strip()
+        
+        num_notes = 1
+        if choice == '2':
+            num_notes = random.randint(1, 3)
+            
+        for _ in range(num_notes):
+            note = ContactNote(
+                note_id=str(uuid.uuid4()),
+                user_id=user_id,
+                contact_id=c_id,
+                label=get_random_value("note_label"),
+                content=get_random_value("note"),
+                last_modified=datetime.now(timezone.utc)
+                # embedding left mostly None for now unless we mocked it, which is complex here
+            )
+            
+            try:
+                notes_coll.insert_one(note.model_dump())
+                created_count += 1
+            except Exception as e:
+                print(f"  [-] Error creating note for {c_name}: {e}")
+                
+        print(f"  [+] Added {num_notes} note(s) for {c_name}")
+
+    print(f"Done. {created_count} total notes created.")
 
 def update_contacts_field(user_id):
     contacts_coll = get_db_collections().contacts
@@ -189,6 +241,7 @@ if __name__ == "__main__":
                 print(f"\n--- Managing: {username} ---")
                 print("1. Update specific field for ALL existing contacts")
                 print("2. Create NEW dummy contacts")
+                print("3. Generate dummy NOTES for existing contacts")
                 print("b. Back to User Select")
                 
                 action = input("Selection: ").strip()
@@ -200,6 +253,9 @@ if __name__ == "__main__":
                     count_input = input("How many new contacts? (default 5): ")
                     count = int(count_input) if count_input.isdigit() else 5
                     generate_dummy_data(target_user_id, count)
+                    
+                elif action == '3':
+                    generate_dummy_notes(target_user_id)
                     
                 elif action.lower() == 'b':
                     break

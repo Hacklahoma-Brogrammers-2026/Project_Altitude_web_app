@@ -20,7 +20,7 @@ export function normalizePerson(person, index = 0) {
     avatar = `${API_BASE_URL}/images/${cleanPath}`
   }
 
-  const relation = person.relation ?? person.group ?? 'Person'
+  const relation = person.label ?? person.relation ?? person.group ?? 'Person'
   const summary = person.note ?? person.summary ?? ''
 
   return {
