@@ -8,6 +8,8 @@ class User(BaseModel):
     email: EmailStr
     password_hash: str
 
+    audio_sample_path: str | None = None
+
 class ContactNote(BaseModel):
     note_id: str
     user_id: str
@@ -17,6 +19,7 @@ class ContactNote(BaseModel):
     content: str
 
     last_modified: datetime
+    img_path: str | None = None
 
     embedding: list[float] | None = None
 
