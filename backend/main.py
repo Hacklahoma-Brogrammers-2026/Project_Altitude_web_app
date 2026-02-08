@@ -1,7 +1,21 @@
+import sys
+import os
+from pathlib import Path
+
+# --- PATH CONFIGURATION ---
+# Get the absolute path of the 'backend' directory (where this file lives)
+backend_dir = Path(__file__).resolve().parent
+
+# Add it to sys.path if it's not already there
+if str(backend_dir) not in sys.path:
+    sys.path.append(str(backend_dir))
+# ---------------------------
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+
 
 # Import Routers
 from app.api.endpoints import router as api_router
