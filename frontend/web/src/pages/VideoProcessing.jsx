@@ -11,7 +11,7 @@ const getWebSocketUrl = () => {
     const normalized = apiBase.replace(/^http/, 'ws').replace(/\/$/, '')
     return `${normalized}/ws/video-consumer`
   }
-  return `${protocol}://${window.location.hostname}:8000/ws/video-consumer`
+  return `${protocol}://192.168.137.1:8000/ws/video-consumer`
 }
 
 function VideoProcessing() {

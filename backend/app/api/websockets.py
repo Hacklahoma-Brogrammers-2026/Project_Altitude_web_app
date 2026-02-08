@@ -125,7 +125,6 @@ async def websocket_producer(websocket: WebSocket):
             nparr = np.frombuffer(data, np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             detected_id = None
-
             if frame is not None:
                 # Add overlays/labels before streaming to consumers
                 # process_frame now returns (annotated_frame, single_detected_id_or_none)
