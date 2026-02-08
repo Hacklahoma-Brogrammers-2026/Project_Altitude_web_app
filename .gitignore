@@ -6,3 +6,4 @@ database/init/**/venv/
 .idea
 backend/data/
 **/pretrained_models/
+**.wav

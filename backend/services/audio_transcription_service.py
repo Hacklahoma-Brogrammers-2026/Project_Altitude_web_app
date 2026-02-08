@@ -336,7 +336,8 @@ def relabel_utterances_with_user(
 def process_audio(file_path: str, user: User) -> list[Utterance]:
     utterances = convert_raw_audio_to_utterances(file_path)
 
-    user_audio_path = f"./backend/data/audio/{user.user_id}.wav"
+    user_audio_path = f"./data/audio/{user.user_id}.wav"
+    print("looging at ", user_audio_path)
     if not Path(user_audio_path).exists():
         raise ValueError("Speaker needs to have an audio sample")
     best_label, scores = score_speakers_against_reference(

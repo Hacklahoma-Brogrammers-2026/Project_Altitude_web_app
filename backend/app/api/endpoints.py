@@ -336,7 +336,7 @@ async def login(request: UserLoginRequest):
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unknown login error")
 
 @router.post("/process-audio")
-async def analyze_audio(audio: UploadFile = File(...), contact_id: str = "", background: BackgroundTasks = BackgroundTasks()):
+async def analyze_audio(audio: UploadFile = File(...), contact_id: str = Form(""), background: BackgroundTasks = BackgroundTasks()):
     if audio.filename is None:
         raise HTTPException(
             status_code=400,
@@ -350,7 +350,8 @@ async def analyze_audio(audio: UploadFile = File(...), contact_id: str = "", bac
         )
 
     file_id = uuid.uuid4().hex
-    dest_path = Path(f"{AUDIO_FILE_DIR}/{file_id}{ext}")
+    dest_path = Path(f"{file_id}{ext}")
+    print(dest_path)
 
     try:
         with dest_path.open("wb") as f:
@@ -361,8 +362,10 @@ async def analyze_audio(audio: UploadFile = File(...), contact_id: str = "", bac
             detail=f"Error: {e}"
         )
 
-    with open("./backend/most_recent_login_id.txt", 'r') as f:
-        user_id = f.readline()
+    # with open("backend/most_recent_login_id.txt", 'r') as f:
+    #     user_id = f.readline()
+    user_id = container.face_service.current_user_id
+    print("contact id: ", contact_id)
     background.add_task(take_notes, str(dest_path), user_id, contact_id)
 
     return 
