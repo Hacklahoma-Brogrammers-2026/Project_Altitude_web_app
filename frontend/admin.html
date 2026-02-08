@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Face Database Admin</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .card img { width: 100%; height: 200px; object-fit: cover; border-radius: 4px; }
+        .unknown { border-left: 5px solid red; }
+        .known { border-left: 5px solid green; }
+        input { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        h1 { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Face Database Management</h1>
+    <div id="people-grid" class="grid"></div>
+
+    <script>
+        const API_URL = "http://localhost:8000";
+
+        async function loadPeople() {
+            const response = await fetch(`${API_URL}/people`);
+            const people = await response.json();
+            
+            const grid = document.getElementById("people-grid");
+            grid.innerHTML = ""; // Clear existing
+
+            // Sort so "Unknown" (newest) come first usually
+            people.reverse();
+
+            people.forEach(p => {
+                // Adjust image path from local file system to URL
+                // Backend saves as 'data/faces/xyz.jpg', we need 'http://localhost:8000/images/xyz.jpg'
+                const filename = p.image_path.split('/').pop();
+                const imageUrl = `${API_URL}/images/${filename}`;
+
+                const isUnknown = p.name === "Unknown";
+                
+                const card = document.createElement("div");
+                card.className = `card ${isUnknown ? 'unknown' : 'known'}`;
+                
+                card.innerHTML = `
+                    <img src="${imageUrl}" alt="Face">
+                    <p style="font-size: 0.8em; color: #666;">ID: ${p.id.substring(0,8)}...</p>
+                    <input type="text" id="name-${p.id}" value="${p.name}" placeholder="Name">
+                    <input type="number" id="age-${p.id}" value="${p.age || ''}" placeholder="Age">
+                    <button onclick="savePerson('${p.id}')">Save Changes</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function savePerson(id) {
+            const name = document.getElementById(`name-${id}`).value;
+            const age = document.getElementById(`age-${id}`).value;
+
+            const response = await fetch(`${API_URL}/people/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: name, age: parseInt(age) || 0 })
+            });
+
+            if (response.ok) {
+                alert("Updated!");
+                loadPeople(); // Refresh to update colors
+            } else {
+                alert("Error updating.");
+            }
+        }
+
+        // Load on start
+        loadPeople();
+    </script>
+</body>
+</html>

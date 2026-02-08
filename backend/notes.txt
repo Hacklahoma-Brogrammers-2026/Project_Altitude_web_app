@@ -1,5 +1,0 @@
-fast api
-pydantic
-
-API endpoints
-- recieve video stream 

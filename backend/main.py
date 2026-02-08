@@ -1,60 +1,48 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import sys
+import os
+from pathlib import Path
+
+# --- PATH CONFIGURATION ---
+# Get the absolute path of the 'backend' directory (where this file lives)
+backend_dir = Path(__file__).resolve().parent
+
+# Add it to sys.path if it's not already there
+if str(backend_dir) not in sys.path:
+    sys.path.append(str(backend_dir))
+# ---------------------------
+
 import uvicorn
-import cv2
-import numpy as np
-from typing import Dict
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
-# Import our new service
-from services.face_recognition import FaceService
 
-app = FastAPI()
+# Import Routers
+# from app.api.endpoints import router as api_router
+from app.api.websockets import ws_router
 
-# Initialize the service globally
-# This triggers the loading of images when the server starts
-face_service = FaceService(known_faces_dir="known_faces")
+# Initialize App
+app = FastAPI(title="Project Altitude API")
+
+# 1. CORS Setup
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 2. Static Files (Images)
+app.mount("/images", StaticFiles(directory="data/faces"), name="images")
+
+# 3. Register Routes
+# app.include_router(api_router)
+app.include_router(ws_router)
 
 @app.get("/")
-async def root() -> Dict[str, str]:
+async def root():
     return {"message": "Face Recognition API is running"}
-
-@app.websocket("/ws/video-stream")
-async def websocket_endpoint(websocket: WebSocket) -> None:
-    await websocket.accept()
-    print("Video Stream Connected")
-    
-    try:
-        while True:
-            # 1. Receive
-            data = await websocket.receive_bytes()
-            nparr = np.frombuffer(data, np.uint8)
-            
-            # 2. Decode
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            if frame is None:
-                continue
-            
-            # 3. Process (Delegate to Service)
-            processed_frame = face_service.process_frame(frame)
-
-            # 4. Display (Server-side debugging)
-            # Note: This requires a GUI environment. 
-            # If running on a headless server, comment out the imshow/waitKey lines.
-            cv2.imshow("Server Feed", processed_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-            await websocket.send_text("ack")
-            
-    except WebSocketDisconnect:
-        print("Video Stream Disconnected")
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        cv2.destroyAllWindows()
-        try:
-            await websocket.close()
-        except RuntimeError:
-            pass
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
