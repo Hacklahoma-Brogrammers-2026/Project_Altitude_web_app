@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from typing import List
 from pydantic import BaseModel, EmailStr
 from services.storage import Person
@@ -26,9 +26,20 @@ class UserResponse(BaseModel):
     email: EmailStr
 
 @router.get("/people", response_model=List[Person])
-async def get_people():
+async def get_people(sort: str = Query("last_modified")):
     """Returns list of all registered people."""
-    return container.storage.get_all()
+    people = container.storage.get_all()
+
+    if sort == "alphabetical":
+        return sorted(people, key=lambda person: person.name.casefold())
+
+    if sort == "last_modified":
+        return sorted(people, key=lambda person: person.last_modified, reverse=True)
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Invalid sort option",
+    )
 
 @router.put("/people/{person_id}")
 async def update_person(person_id: str, person: PersonUpdate):
