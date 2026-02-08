@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+const UPLOAD_AUDIO_ENDPOINT = `${API_BASE_URL}/uploadAudio` // Added this
 
 const getWebSocketUrl = () => {
   if (typeof window === 'undefined') {
@@ -243,9 +244,49 @@ function VideoProcessing() {
       setVoiceStatus('No sample to send')
       return
     }
+    
+    // Retrieve the current user's ID
+    const storedUser = localStorage.getItem('altitudeUser')
+    if (!storedUser) {
+      setVoiceStatus('No user logged in')
+      return
+    }
+    let userId = ''
+    try {
+      const parsed = JSON.parse(storedUser)
+      userId = parsed.user_id || parsed.id
+    } catch {
+      setVoiceStatus('Invalid user data')
+      return
+    }
 
-    setVoiceStatus('Sample ready to send')
-    // Placeholder for upload integration.
+    if (!userId) {
+      setVoiceStatus('User ID missing')
+      return
+    }
+
+    setVoiceStatus('Uploading sample...')
+    try {
+      const formData = new FormData()
+      formData.append('user_id', userId)
+      formData.append('file', voiceBlob, 'recording.wav')
+
+      const response = await fetch(UPLOAD_AUDIO_ENDPOINT, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.status}`)
+      }
+      
+      const result = await response.json()
+      setVoiceStatus('Audio saved successfully!')
+      console.log('Audio uploaded:', result.url)
+    } catch (error) {
+      console.error(error)
+      setVoiceStatus('Error uploading audio')
+    }
   }
 
   const recognizedName = recognizedPerson

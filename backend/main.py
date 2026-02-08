@@ -47,6 +47,10 @@ app.add_middleware(
 
 # 2. Static Files (Images)
 app.mount("/images", StaticFiles(directory="data/faces"), name="images")
+# 3. Static Files (Audio)
+if not os.path.exists("data/audio"):
+    os.makedirs("data/audio")
+app.mount("/audio", StaticFiles(directory="data/audio"), name="audio")
 
 # 3. Register Routes
 app.include_router(api_router)

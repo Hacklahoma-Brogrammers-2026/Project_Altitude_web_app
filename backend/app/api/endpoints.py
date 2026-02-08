@@ -1,10 +1,13 @@
-from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi import APIRouter, HTTPException, Query, Request, status, UploadFile, File, Form
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr
+import subprocess
+import os
 from services.storage import Person # Keep for backwards compat if needed, but we prefer Contact
 from database.models import Contact
 from app.core.container import container
 from repos import contact_note_repo, contact_repo, user_repo
+from pathlib import Path
 
 router = APIRouter()
 
@@ -224,6 +227,74 @@ async def register(request: UserRegisterRequest):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+@router.post("/uploadAudio")
+async def upload_audio(
+    user_id: str = Form(...),
+    file: UploadFile = File(...)
+):
+    """
+    Upload an audio sample for a user/person.
+    Saves and converts the incoming WebM/Ogg audio to a standard WAV file using ffmpeg.
+    """
+    if not file:
+        raise HTTPException(status_code=400, detail="No file sent")
+
+    # Ensure backend/data/audio exists
+    audio_dir = Path("data/audio")
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Paths
+    temp_filename = f"temp_{user_id}.webm"
+    final_filename = f"{user_id}.wav"
+    
+    temp_path = audio_dir / temp_filename
+    final_path = audio_dir / final_filename
+    
+    try:
+        # 1. Save the incoming stream to a temporary file
+        with open(temp_path, "wb") as buffer:
+            while chunk := await file.read(1024 * 1024):
+                buffer.write(chunk)
+        
+        # 2. Convert to WAV using ffmpeg
+        # -i: input file
+        # -y: overwrite output file if it exists
+        # -ac 1: convert to mono (optional, but good for standardization)
+        # -ar 16000: set sample rate to 16kHz (optional, standard for ML)
+        command = [
+            "ffmpeg", 
+            "-i", str(temp_path),
+            "-y", 
+            "-ac", "1",
+            "-ar", "16000",
+            str(final_path)
+        ]
+        
+        process = subprocess.run(
+            command, 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        if process.returncode != 0:
+            print(f"FFmpeg error: {process.stderr}")
+            raise RuntimeError("FFmpeg conversion failed")
+
+        # 3. Clean up temp file
+        if temp_path.exists():
+            temp_path.unlink()
+                
+        return {"message": "Audio uploaded and converted successfully", "url": f"/audio/{final_filename}"}
+
+    except Exception as e:
+        print(f"Error saving audio: {e}")
+        # Clean up on error
+        if 'temp_path' in locals() and temp_path.exists():
+            temp_path.unlink()
+            
+        raise HTTPException(status_code=500, detail=f"Could not save and convert audio file: {str(e)}")
 
 @router.post("/login", response_model=UserResponse)
 async def login(request: UserLoginRequest):
