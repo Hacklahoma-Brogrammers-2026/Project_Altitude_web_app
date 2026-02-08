@@ -1,5 +1,5 @@
 import os
-from services.face_recognition import FaceService
+from services.recognition_service import FaceService
 from services.storage import JsonPersonRepository
 
 class Container:
