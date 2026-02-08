@@ -1,20 +1,51 @@
 import { Link, useNavigate } from 'react-router-dom'
-
-const heroImage =
-  'https://www.figma.com/api/mcp/asset/1959cab6-7ed8-4936-bc2d-d8d77e028471'
+import { HERO_IMAGE } from '../utils/constants'
 
 function SignUp() {
   const navigate = useNavigate()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    navigate('/home')
+    
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData.entries());
+
+    // Backend expects 'username' but form has 'fullName'
+    const payload = {
+      username: data.fullName,
+      email: data.email,
+      password: data.password
+    };
+
+
+    try {
+      const response = await fetch("http://localhost:8000/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Registration successful:", result);
+        // After sign up, redirect to login or home
+        navigate('/login');
+      } else {
+         const errorData = await response.json();
+         alert(`Registration failed: ${errorData.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+       console.error("Error registering:", error);
+       alert("Error registering");
+    }
   }
 
   return (
     <div className="login">
       <div className="login__bg" aria-hidden="true">
-        <img src={heroImage} alt="" />
+        <img src={HERO_IMAGE} alt="" />
       </div>
 
       <main className="login__content">

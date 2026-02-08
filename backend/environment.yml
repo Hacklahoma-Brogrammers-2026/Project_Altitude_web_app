@@ -23,3 +23,9 @@ dependencies:
     - websockets
     - opencv-python
     - face_recognition
+    - argon2-cffi
+    - pymongo
+    - python-dotenv
+    - pydantic[email]
+    - langchain
+    - langchain-openai

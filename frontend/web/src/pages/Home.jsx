@@ -1,10 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
+import { normalizePerson } from '../utils/transform'
+import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
 
-const heroImage =
-  'https://www.figma.com/api/mcp/asset/55c25fd1-e61b-4263-a50f-2ba9d4e4bc55'
-const avatarPlaceholder =
-  'https://www.figma.com/api/mcp/asset/e1cc52ac-9fe1-43fd-9bcf-79865cf93c24'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 function Home() {
@@ -16,15 +14,7 @@ function Home() {
   const navigate = useNavigate()
 
   const latestPeople = useMemo(() => {
-    return people.map((person, index) => {
-      const id = person.contact_id ?? person.id ?? `${index}`
-      const name = `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim()
-      return {
-        id,
-        name: name || 'Unknown Person',
-        avatar: person.photo ?? person.photo_url ?? person.image ?? person.avatar,
-      }
-    })
+    return people.map(normalizePerson)
   }, [people])
 
   useEffect(() => {
@@ -74,7 +64,7 @@ function Home() {
   return (
     <div className="home">
       <div className="home__bg" aria-hidden="true">
-        <img src={heroImage} alt="" />
+        <img src={HERO_IMAGE} alt="" />
       </div>
 
       <main className="home__content home__content--center">
@@ -144,7 +134,7 @@ function Home() {
               >
                 <img
                   className="home__latest-avatar"
-                  src={row.avatar || avatarPlaceholder}
+                  src={row.avatar || AVATAR_PLACEHOLDER}
                   alt=""
                   aria-hidden="true"
                 />

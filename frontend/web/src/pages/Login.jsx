@@ -1,20 +1,42 @@
 import { Link, useNavigate } from 'react-router-dom'
-
-const heroImage =
-  'https://www.figma.com/api/mcp/asset/1959cab6-7ed8-4936-bc2d-d8d77e028471'
+import { HERO_IMAGE } from '../utils/constants'
 
 function Login() {
   const navigate = useNavigate()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    navigate('/home')
+    
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch("http://localhost:8000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Ideally store the token or user data in context/local storage here
+        console.log("Login successful:", result);
+        navigate('/home');
+      } else {
+        alert("Login failed");
+      }
+    } catch (error) {
+       console.error("Error logging in:", error);
+       alert("Error logging in");
+    }
   }
 
   return (
     <div className="login">
       <div className="login__bg" aria-hidden="true">
-        <img src={heroImage} alt="" />
+        <img src={HERO_IMAGE} alt="" />
       </div>
 
       <main className="login__content">
@@ -24,15 +46,15 @@ function Login() {
           <h2 className="login__card-title">Welcome Back</h2>
 
           <form className="login__form" onSubmit={handleSubmit}>
-            <label className="login__label" htmlFor="username">
-              User
+            <label className="login__label" htmlFor="email">
+              Email
             </label>
             <input
               className="login__input"
-              id="username"
-              name="username"
-              type="text"
-              autoComplete="username"
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
             />
 
             <label className="login__label" htmlFor="password">

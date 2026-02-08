@@ -1,10 +1,8 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
+import { normalizePerson } from '../utils/transform'
+import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
 
-const heroImage =
-  'https://www.figma.com/api/mcp/asset/5209dc40-ce81-4fc3-9083-2774e5934491'
-const avatarPlaceholder =
-  'https://www.figma.com/api/mcp/asset/b0db9ac1-bd8f-4d55-97c9-c6dce409929a'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 const SEARCH_USER_ENDPOINT = `${API_BASE_URL}/api/searchUser`
 const SEARCH_INFO_ENDPOINT = `${API_BASE_URL}/api/searchInfo`
@@ -21,17 +19,7 @@ function SearchQuery() {
   const searchMode = modeParam === 'info' ? 'info' : 'users'
 
   const normalizedResults = useMemo(() => {
-    return results.map((row, index) => {
-      const name = row.name ?? row.fullName ?? 'Unknown'
-      const relation = row.label ?? row.relation ?? row.group ?? 'Person'
-      const id = row.id ?? row.personId ?? `${name}-${index}`
-      return {
-        id,
-        name,
-        relation,
-        avatar: row.avatar,
-      }
-    })
+    return results.map(normalizePerson)
   }, [results])
 
   useEffect(() => {
@@ -97,7 +85,7 @@ function SearchQuery() {
   return (
     <div className="home">
       <div className="home__bg" aria-hidden="true">
-        <img src={heroImage} alt="" />
+        <img src={HERO_IMAGE} alt="" />
       </div>
 
       <main className="home__content">
@@ -143,7 +131,7 @@ function SearchQuery() {
               >
                 <img
                   className="home__avatar"
-                  src={row.avatar || avatarPlaceholder}
+                  src={row.avatar || AVATAR_PLACEHOLDER}
                   alt=""
                   aria-hidden="true"
                 />

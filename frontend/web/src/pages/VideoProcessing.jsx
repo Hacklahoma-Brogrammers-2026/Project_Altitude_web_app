@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-
-const heroImage =
-  'https://www.figma.com/api/mcp/asset/55c25fd1-e61b-4263-a50f-2ba9d4e4bc55'
-const avatarPlaceholder =
-  'https://www.figma.com/api/mcp/asset/e1cc52ac-9fe1-43fd-9bcf-79865cf93c24'
+import { HERO_IMAGE } from '../utils/constants'
 
 const getWebSocketUrl = () => {
   if (typeof window === 'undefined') {
@@ -65,7 +61,7 @@ function VideoProcessing() {
   return (
     <div className="home video">
       <div className="home__bg" aria-hidden="true">
-        <img src={heroImage} alt="" />
+        <img src={HERO_IMAGE} alt="" />
       </div>
 
       <main className="home__content video__content">

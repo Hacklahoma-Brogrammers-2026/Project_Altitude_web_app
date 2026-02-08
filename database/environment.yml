@@ -1,0 +1,14 @@
+name: altitude_database_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # 1. Core Python
+  - python=3.12
+  - pip
+
+  - pip:
+    - pymongo 
+    - python-dotenv
+    - ipykernel
+    - pydantic
