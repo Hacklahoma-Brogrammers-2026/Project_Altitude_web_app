@@ -96,6 +96,74 @@ async def get_person(person_id: str, request: Request):
         "last_modified": contact.last_modified,
     }
 
+@router.get("/searchUser")
+async def search_user(q: str, request: Request):
+    """
+    Search people by name.
+    """
+    current_user = container.face_service.current_user_id
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not logged in",
+        )
+    
+    contacts = contact_repo.search_contacts_by_name(current_user, q)
+    
+    results = []
+    for contact in contacts:
+        results.append({
+            "id": contact.contact_id,
+            "name": f"{contact.first_name} {contact.last_name}",
+            "avatar": _build_photo_url(request, contact.image_path)
+        })
+        
+    return {"results": results}
+
+
+@router.get("/searchInfo")
+async def search_info(q: str, request: Request):
+    """
+    Semantic search based on context labels/notes.
+    """
+    current_user = container.face_service.current_user_id
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not logged in",
+        )
+        
+    # Search notes
+    note_results = contact_note_repo.semantic_search_notes(
+        user_id=current_user,
+        query=q,
+        limit=20 # Fetch a few more to filter if needed
+    )
+    
+    search_results = []
+    seen_notes = set()
+
+    for item in note_results:
+        note = item.note
+        if note.note_id in seen_notes:
+            continue
+        seen_notes.add(note.note_id)
+
+        # Get associated contact
+        contact = contact_repo.get_contact_by_id(note.contact_id)
+        if not contact:
+            continue
+            
+        search_results.append({
+            "id": contact.contact_id,
+            "name": f"{contact.first_name} {contact.last_name}",
+            "avatar": _build_photo_url(request, contact.image_path),
+            "label": note.label
+        })
+        
+    return {"results": search_results}
+
+
 @router.post("/register", response_model=UserResponse)
 async def register(request: UserRegisterRequest):
     try:

@@ -2,10 +2,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { normalizePerson } from '../utils/transform'
 import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
-const SEARCH_USER_ENDPOINT = `${API_BASE_URL}/api/searchUser`
-const SEARCH_INFO_ENDPOINT = `${API_BASE_URL}/api/searchInfo`
+import { searchUsers, searchInfo } from '../utils/api'
 
 function SearchQuery() {
   const [searchParams] = useSearchParams()
@@ -41,17 +38,11 @@ function SearchQuery() {
       setIsSearching(true)
       setErrorMessage('')
       try {
-        const endpoint =
-          searchMode === 'info' ? SEARCH_INFO_ENDPOINT : SEARCH_USER_ENDPOINT
-        const response = await fetch(
-          `${endpoint}?q=${encodeURIComponent(trimmed)}`,
-          { signal: controller.signal }
-        )
-        if (!response.ok) {
-          throw new Error('Search request failed.')
-        }
-        const data = await response.json()
-        const items = Array.isArray(data) ? data : data?.results ?? []
+        const items =
+          searchMode === 'info'
+            ? await searchInfo(trimmed, controller.signal)
+            : await searchUsers(trimmed, controller.signal)
+
         setResults(items)
       } catch (error) {
         if (error.name === 'AbortError') {
