@@ -1,62 +1,31 @@
-import assemblyai as aai
+# example.py
+import os
+from dotenv import load_dotenv
+from io import BytesIO
+import requests
+from elevenlabs.client import ElevenLabs
 
-from assemblyai.streaming.v3 import (
-     BeginEvent,
-    StreamingClient,
-    StreamingClientOptions,
-    StreamingError,
-    StreamingEvents,
-    StreamingParameters,
-    StreamingSessionParameters,
-    TerminationEvent,
-    TurnEvent,
+load_dotenv()
+
+elevenlabs = ElevenLabs(
+  api_key=os.getenv("ELEVENLABS_API_KEY"),
 )
 
-from backend.config import config
+audio_url = (
+    "https://storage.googleapis.com/eleven-public-cdn/audio/marketing/nicole.mp3"
+)
+response = requests.get(audio_url)
+audio_data = BytesIO(response.content)
 
-import logging
+transcription = elevenlabs.speech_to_text.convert(
+    file=audio_data,
+    model_id="scribe_v2", # Model to use
+    tag_audio_events=True, # Tag audio events like laughter, applause, etc.
+    language_code="eng", # Language of the audio file. If set to None, the model will detect the language automatically.
+    diarize=True, # Whether to annotate who is speaking
+)
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
+print(transcription)
 
-    def on_begin(self: StreamingClient, event: BeginEvent):
-        print(f"Session started: {event.id}")
-
-    def on_turn(self: StreamingClient, event: TurnEvent):
-        print(f"{event.transcript} ({event.end_of_turn})")
-
-        if event.end_of_turn and not event.turn_is_formatted:
-            params = StreamingSessionParameters(format_turns=True)
-
-            self.set_params(params)
-
-    def on_terminated(self: StreamingClient, event: TerminationEvent):
-        print(
-            f"Session terminated: {event.audio_duration_seconds} seconds of audio processed"
-        )
-
-    def on_error(self: StreamingClient, error: StreamingError):
-        print(f"Error occurred: {error}")
-
-    client = StreamingClient(
-        StreamingClientOptions(
-            api_key=config.assembly_ai_api_key,
-            api_host="streaming.assemblyai.com",
-        )
-    )
-
-    client.on(StreamingEvents.Begin, on_begin)
-    client.on(StreamingEvents.Turn, on_turn)
-    client.on(StreamingEvents.Termination, on_terminated)
-    client.on(StreamingEvents.Error, on_error)
-
-    client.connect(StreamingParameters(sample_rate=16000, format_turns=True))
-
-    try:
-        client.stream(aai.extras.MicrophoneStream(sample_rate=16000))
-    finally:
-        client.disconnect(terminate=True)
-    
-
-
+def process_audio(file_path: str) -> None:
+    pass

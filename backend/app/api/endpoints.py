@@ -1,6 +1,10 @@
-from fastapi import APIRouter, HTTPException, status
+from pathlib import Path
+import shutil
+import uuid
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile, status
 from typing import List
 from pydantic import BaseModel, EmailStr
+from backend.services.audio_embedding_service import AUDIO_FILE_DIR
 from services.storage import Person
 from app.core.container import container
 from repos import user_repo
@@ -81,3 +85,30 @@ async def login(request: UserLoginRequest):
         )
     
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unknown login error")
+
+@router.post("/process-audio")
+async def analyze_audio(audio: UploadFile = File(...), background: BackgroundTasks = BackgroundTasks()):
+    if audio.filename is None:
+        raise HTTPException(
+            status_code=400,
+            detail="audio file must have a file name"
+        )
+    ext = Path(audio.filename).suffix.lower()
+    if ext not in [".wav"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type. Needs to be one of {[".wav"]}"
+        )
+
+    file_id = uuid.uuid4().hex
+    dest_path = Path(f"{AUDIO_FILE_DIR}/{file_id}{ext}")
+
+    try:
+        with dest_path.open("wb") as f:
+            shutil.copyfileobj(audio.file, f)
+    except e:
+        raise HTTPException(
+            status
+        )
+
+            # TODO: Call 11 Labs

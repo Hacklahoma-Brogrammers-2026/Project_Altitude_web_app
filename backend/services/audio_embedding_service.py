@@ -5,13 +5,18 @@ import numpy as np
 from speechbrain.inference.speaker import SpeakerRecognition
 from speechbrain.dataio import audio_io  # type: ignore
 
+AUDIO_FILE_DIR = None
+
 verifier: SpeakerRecognition = SpeakerRecognition.from_hparams(
     source="speechbrain/spkrec-ecapa-voxceleb",
     savedir="pretrained_models/spkrec-ecapa",
 )  # type: ignore
 
 def init_audio_service():
+    global AUDIO_FILE_DIR
     os.makedirs("data/audio_samples", exist_ok=True)
+    AUDIO_FILE_DIR = "data/audio_samples"
+
 
 def are_audio_samples_from_same_speaker(path1: str, path2: str) -> bool:
     signal1, fs = audio_io.load(path1)
