@@ -7,7 +7,7 @@ async def send_video_data() -> None:
     """
     Captures video from the default camera and streams it to the WebSocket server.
     """
-    uri: str = "ws://localhost:8000/ws/video-stream"
+    uri: str = "ws://localhost:8000/ws/video-producer"
     
     # Open local webcam (0 is usually the default camera)
     cap: cv2.VideoCapture = cv2.VideoCapture(0)
