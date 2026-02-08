@@ -19,7 +19,7 @@ function Home() {
 
   useEffect(() => {
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/api/getPeople?sort=last_modified`
+    const endpoint = `${API_BASE_URL}/api/people?sort=last_modified`
 
     const loadPeople = async () => {
       setIsLoading(true)

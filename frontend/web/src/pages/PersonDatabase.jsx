@@ -26,7 +26,7 @@ function PersonDatabase() {
 
   useEffect(() => {
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/api/getPeople?sort=${sortFilter}`
+    const endpoint = `${API_BASE_URL}/api/people?sort=${sortFilter}`
 
     const loadPeople = async () => {
       setIsLoading(true)
