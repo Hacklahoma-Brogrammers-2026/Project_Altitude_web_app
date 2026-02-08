@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { latestPeople } from '../data/people.js'
 
 const heroImage =
@@ -9,17 +9,7 @@ const avatarPlaceholder =
 
 function Home() {
   const [query, setQuery] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
   const navigate = useNavigate()
-  const timeoutRef = useRef(0)
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [])
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -27,11 +17,7 @@ function Home() {
     if (!trimmed) {
       return
     }
-    setIsSearching(true)
-    timeoutRef.current = window.setTimeout(() => {
-      setIsSearching(false)
-      navigate(`/search?q=${encodeURIComponent(trimmed)}`)
-    }, 700)
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`)
   }
 
   return (
@@ -56,7 +42,6 @@ function Home() {
           <button className="home__search-button" type="submit">
             &gt;
           </button>
-          {isSearching ? <span className="home__search-progress" /> : null}
         </form>
 
         <section className="home__card" aria-label="Latest Data">

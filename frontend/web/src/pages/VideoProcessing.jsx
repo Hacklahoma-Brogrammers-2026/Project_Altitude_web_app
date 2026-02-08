@@ -97,48 +97,30 @@ function VideoProcessing() {
 
         <section
           className="home__card video__config"
-          aria-label="Data Collection Configuration"
+          aria-label="LLM Configuration"
         >
           <div className="video__config-header">
-            <h2 className="video__config-title">Configurations</h2>
-            <button className="video__config-save" type="button">
-              Save
+            <h2 className="video__config-title">LLM Configuration</h2>
+            <button className="video__config-save" type="submit" form="llmConfig">
+              Send
             </button>
           </div>
 
-          <div className="video__config-grid">
-            <label className="video__config-field">
-              Capture Interval
-              <select className="video__config-select" defaultValue="5s">
-                <option value="1s">Every 1s</option>
-                <option value="5s">Every 5s</option>
-                <option value="10s">Every 10s</option>
-              </select>
+          <form className="video__config-form" id="llmConfig">
+            <label className="video__config-field" htmlFor="llmPrompt">
+              Configuration Prompt
+              <textarea
+                className="video__config-textarea"
+                id="llmPrompt"
+                name="llmPrompt"
+                rows={4}
+                placeholder="Describe how the model should configure video processing..."
+              />
             </label>
-            <label className="video__config-field">
-              Recognition Mode
-              <select className="video__config-select" defaultValue="balanced">
-                <option value="balanced">Balanced</option>
-                <option value="fast">Fast</option>
-                <option value="accurate">High accuracy</option>
-              </select>
-            </label>
-            <label className="video__config-field">
-              Store Snapshots
-              <select className="video__config-select" defaultValue="on">
-                <option value="on">On</option>
-                <option value="off">Off</option>
-              </select>
-            </label>
-            <label className="video__config-field">
-              Data Retention
-              <select className="video__config-select" defaultValue="30d">
-                <option value="7d">7 days</option>
-                <option value="30d">30 days</option>
-                <option value="90d">90 days</option>
-              </select>
-            </label>
-          </div>
+            <p className="video__config-hint">
+              This will be sent to the configuration service once wired up.
+            </p>
+          </form>
         </section>
       </main>
     </div>
