@@ -5,6 +5,9 @@ from pymongo.database import Database
 from pymongo.synchronous.collection import Collection
 
 class DbCollections(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
     users: Collection[Any]
     contact_notes: Collection[Any]
     contacts: Collection[Any]
