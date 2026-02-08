@@ -6,9 +6,33 @@ const heroImage =
 function Login() {
   const navigate = useNavigate()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    navigate('/home')
+    
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch("http://localhost:8000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Ideally store the token or user data in context/local storage here
+        console.log("Login successful:", result);
+        navigate('/home');
+      } else {
+        alert("Login failed");
+      }
+    } catch (error) {
+       console.error("Error logging in:", error);
+       alert("Error logging in");
+    }
   }
 
   return (

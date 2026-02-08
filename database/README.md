@@ -8,5 +8,5 @@
 
 From the ```database``` directory, run ```docker compose up```
 
-1. ```docker compose up```
+1. ```sudo docker compose up```
 2. ```python bootstrap_db.py```

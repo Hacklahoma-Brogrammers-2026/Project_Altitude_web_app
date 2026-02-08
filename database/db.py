@@ -13,7 +13,7 @@ class DbCollections(BaseModel):
     contacts: Collection[Any]
 
 _client: MongoClient | None = None
-_db_collections: DbCollections | None
+_db_collections: DbCollections | None = None
 _db: Database | None = None
 
 def init_db(mongo_uri: str, db_name: str) -> None:

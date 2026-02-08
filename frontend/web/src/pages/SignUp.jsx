@@ -6,9 +6,42 @@ const heroImage =
 function SignUp() {
   const navigate = useNavigate()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    navigate('/home')
+    
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData.entries());
+
+    // Backend expects 'username' but form has 'fullName'
+    const payload = {
+      username: data.fullName,
+      email: data.email,
+      password: data.password
+    };
+
+
+    try {
+      const response = await fetch("http://localhost:8000/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Registration successful:", result);
+        // After sign up, redirect to login or home
+        navigate('/login');
+      } else {
+         const errorData = await response.json();
+         alert(`Registration failed: ${errorData.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+       console.error("Error registering:", error);
+       alert("Error registering");
+    }
   }
 
   return (
