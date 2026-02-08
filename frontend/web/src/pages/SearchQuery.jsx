@@ -1,30 +1,82 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
-import { searchResults } from '../data/people.js'
+import { useEffect, useMemo, useState } from 'react'
 
 const heroImage =
   'https://www.figma.com/api/mcp/asset/5209dc40-ce81-4fc3-9083-2774e5934491'
 const avatarPlaceholder =
   'https://www.figma.com/api/mcp/asset/b0db9ac1-bd8f-4d55-97c9-c6dce409929a'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+const SEARCH_ENDPOINT = `${API_BASE_URL}/api/search`
 
 function SearchQuery() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
-  const timeoutRef = useRef(0)
+  const [results, setResults] = useState([])
+  const [errorMessage, setErrorMessage] = useState('')
+  const queryParam = searchParams.get('q') ?? ''
+
+  const normalizedResults = useMemo(() => {
+    return results.map((row, index) => {
+      const name = row.name ?? row.fullName ?? 'Unknown'
+      const relation = row.relation ?? row.group ?? 'Person'
+      const id = row.id ?? row.personId ?? `${name}-${index}`
+      return {
+        id,
+        name,
+        relation,
+        avatar: row.avatar,
+      }
+    })
+  }, [results])
 
   useEffect(() => {
-    setQuery(searchParams.get('q') ?? '')
-  }, [searchParams])
+    setQuery(queryParam)
+  }, [queryParam])
 
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current)
+    const trimmed = queryParam.trim()
+    if (!trimmed) {
+      setResults([])
+      setErrorMessage('')
+      setIsSearching(false)
+      return
+    }
+
+    const controller = new AbortController()
+
+    const runSearch = async () => {
+      setIsSearching(true)
+      setErrorMessage('')
+      try {
+        const response = await fetch(
+          `${SEARCH_ENDPOINT}?q=${encodeURIComponent(trimmed)}`,
+          {
+            signal: controller.signal,
+          }
+        )
+        if (!response.ok) {
+          throw new Error('Search request failed.')
+        }
+        const data = await response.json()
+        const items = Array.isArray(data) ? data : data?.results ?? []
+        setResults(items)
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          return
+        }
+        setResults([])
+        setErrorMessage('Unable to fetch results. Please try again.')
+      } finally {
+        setIsSearching(false)
       }
     }
-  }, [])
+
+    runSearch()
+
+    return () => controller.abort()
+  }, [queryParam])
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -32,11 +84,7 @@ function SearchQuery() {
     if (!trimmed) {
       return
     }
-    setIsSearching(true)
-    timeoutRef.current = window.setTimeout(() => {
-      setIsSearching(false)
-      navigate(`/search?q=${encodeURIComponent(trimmed)}`)
-    }, 700)
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`)
   }
 
   return (
@@ -71,8 +119,16 @@ function SearchQuery() {
         <section className="home__card" aria-label="People">
           <h2 className="home__card-title">People</h2>
 
+          {errorMessage ? (
+            <p className="home__status home__status--error">{errorMessage}</p>
+          ) : null}
+          {!errorMessage && !isSearching && queryParam.trim() &&
+          normalizedResults.length === 0 ? (
+            <p className="home__status">No results found.</p>
+          ) : null}
+
           <div className="home__rows">
-            {searchResults.map((row) => (
+            {normalizedResults.map((row) => (
               <Link
                 className="home__row home__row-link"
                 key={row.id}
