@@ -31,7 +31,7 @@ from app.api.websockets import ws_router
 from backend.config import config
 
 from database.db import init_db
-init_db(config.mongo_url, config.db_name)
+# init_db(config.mongo_url, config.db_name)
 
 # Initialize App
 app = FastAPI(title="Project Altitude API")

@@ -5,6 +5,7 @@ import threading
 import asyncio
 import os
 from services.recognition_service import FaceService
+import sounddevice as sd
 # from app.core.container import container
 
 ws_router = APIRouter()
@@ -12,6 +13,10 @@ latest_frame = None
 latest_frame_bytes = None
 lock = threading.Lock()
 face_service = FaceService()
+
+# Audio Playback settings
+SAMPLE_RATE = 16000
+CHANNELS = 1
 
 # We'll store the display thread and a stop event
 display_thread = None
@@ -34,6 +39,29 @@ def display_loop(stop_event):
 
     cv2.destroyAllWindows()
     print("Display loop stopped")
+
+SAVE_FOLDER = "audiotest"
+os.makedirs(SAVE_FOLDER, exist_ok=True)
+
+file_counter = 0  # global counter for sequential filenames
+
+@ws_router.websocket("/ws/audio-debug")
+async def websocket_audio_debug(websocket: WebSocket):
+    global file_counter
+    await websocket.accept()
+    print("[INFO] Client connected to /ws/audio-debug")
+
+    try:
+        while True:
+            message = await websocket.receive_bytes()
+            # save the received WAV bytes
+            filename = os.path.join(SAVE_FOLDER, f"audio_{file_counter:04d}.wav")
+            with open(filename, "wb") as f:
+                f.write(message)
+            print(f"[INFO] Saved WAV file: {filename}")
+            file_counter += 1
+    except WebSocketDisconnect:
+        print("[INFO] Client disconnected from /ws/audio-debug")
 
 @ws_router.websocket("/ws/video-debug")
 async def websocket_debug(websocket: WebSocket):
@@ -62,6 +90,8 @@ async def websocket_debug(websocket: WebSocket):
             if frame is not None:
                 with lock:
                     latest_frame = frame
+
+            await websocket.send_text("ID1")
 
     except Exception as e:
         print(f"Video WebSocket error: {e}")
