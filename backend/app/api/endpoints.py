@@ -74,6 +74,10 @@ async def login(request: UserLoginRequest):
         )
     
     if result.status == "SUCCESS" and result.user:
+        # Update the face service with the logged-in user
+        container.face_service.set_current_user(result.user.user_id)
+        print(f"LOGIN SUCCESS: FaceService updated with user {result.user.user_id}")
+        
         return UserResponse(
             user_id=result.user.user_id,
             username=result.user.username,
