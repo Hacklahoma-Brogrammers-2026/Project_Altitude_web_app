@@ -322,8 +322,7 @@ async def login(request: UserLoginRequest):
         )
     
     if result.status == "SUCCESS" and result.user:
-        with open("./backend/most_recent_login_id.txt", "w") as f:
-            f.write(result.user.user_id)
+
         # Update the face service with the logged-in user
         container.face_service.set_current_user(result.user.user_id)
         print(f"LOGIN SUCCESS: FaceService updated with user {result.user.user_id}")

@@ -5,7 +5,6 @@ import threading
 import asyncio
 import os
 
-import sounddevice as sd
 from app.core.container import container
 
 ws_router = APIRouter()
@@ -66,8 +65,10 @@ async def _broadcast_recognition(contact_id: str) -> None:
         return
 
     payload = {"contact_id": contact_id}
+    # print(f"[INFO] Broadcasting recognition event: {contact_id}")
     disconnected: list[WebSocket] = []
-    for client in recognition_clients:
+    # Iterate over a copy to handle set modifications during iteration
+    for client in list(recognition_clients):
         try:
             await client.send_json(payload)
         except Exception:
@@ -148,6 +149,9 @@ async def websocket_producer(websocket: WebSocket):
                 # process_frame now returns (annotated_frame, single_detected_id_or_none)
                 frame, detected_id = face_service.process_frame(frame)
                 
+                if detected_id:
+                    await _broadcast_recognition(detected_id)
+
                 success, buffer = cv2.imencode('.jpg', frame)
                 if success:
                     with lock:

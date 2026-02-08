@@ -2,8 +2,6 @@ import sys
 import os
 from pathlib import Path
 
-from backend.services.audio_embedding_service import init_audio_service
-
 # --- PATH CONFIGURATION ---
 # Get the absolute path of the 'backend' directory (where this file lives)
 backend_dir = Path(__file__).resolve().parent
@@ -16,6 +14,8 @@ if str(backend_dir) not in sys.path:
 if str(project_root) not in sys.path:
     sys.path.append(str(project_root))
 # ---------------------------
+
+from backend.services.audio_embedding_service import init_audio_service
 
 import uvicorn
 from fastapi import FastAPI
@@ -33,7 +33,7 @@ from app.api.websockets import ws_router
 from backend.config import config
 
 from database.db import init_db
-# init_db(config.mongo_url, config.db_name)
+init_db(config.mongo_url, config.db_name)
 
 init_audio_service()
 # Initialize App
