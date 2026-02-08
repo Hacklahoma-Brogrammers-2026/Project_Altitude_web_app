@@ -7,7 +7,6 @@ class User(BaseModel):
     username: str
     email: EmailStr
     password_hash: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ContactNote(BaseModel):
     note_id: str
@@ -16,6 +15,8 @@ class ContactNote(BaseModel):
 
     label: str
     content: str
+
+    last_modified: datetime
 
     embedding: list[float] | None = None
 
@@ -29,3 +30,4 @@ class Contact(BaseModel):
     last_name: str = "Unknown Last Name"
 
     note: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
