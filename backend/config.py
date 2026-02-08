@@ -10,5 +10,6 @@ class Config(BaseModel):
     embed_dim: int = int(os.environ.get("EMBED_DIM")) # type: ignore
     embedding_model: str = "text-embedding-3-small"
     assembly_ai_api_key: str = os.environ["ASSEMBLY_AI_API_KEY"]
+    llm_model_name: str = "gpt-5-nano"
 
 config = Config()

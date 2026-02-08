@@ -5,6 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile,
 from typing import List
 from pydantic import BaseModel, EmailStr
 from backend.services.audio_embedding_service import AUDIO_FILE_DIR
+from backend.services.audio_transcription_service import process_audio
 from services.storage import Person
 from app.core.container import container
 from repos import user_repo
@@ -106,9 +107,13 @@ async def analyze_audio(audio: UploadFile = File(...), background: BackgroundTas
     try:
         with dest_path.open("wb") as f:
             shutil.copyfileobj(audio.file, f)
-    except e:
+    except Exception as e:
         raise HTTPException(
-            status
+            status_code=500,
+            detail=f"Error: {e}"
         )
 
-            # TODO: Call 11 Labs
+    background.add_task(process_audio, str(dest_path))
+
+    return 
+
