@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { normalizePerson } from '../utils/transform'
+import { fetchPeople } from '../utils/api'
 import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '' // Removed, used in api.js
 
 function PersonDatabase() {
   const pageSize = 15
@@ -26,28 +27,27 @@ function PersonDatabase() {
 
   useEffect(() => {
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/api/people?sort=${sortFilter}`
 
     const loadPeople = async () => {
       setIsLoading(true)
       setErrorMessage('')
       try {
-        const response = await fetch(endpoint, { signal: controller.signal })
-        if (!response.ok) {
-          throw new Error('Request failed')
-        }
-        const data = await response.json()
-        const items = Array.isArray(data) ? data : data?.results ?? []
+        const items = await fetchPeople({ 
+            signal: controller.signal, 
+            sort: sortFilter 
+        })
         setPeople(items)
         setCurrentPage(1)
       } catch (error) {
-        if (error.name === 'AbortError') {
+        if (error.name === 'AbortError' || controller.signal.aborted) {
           return
         }
         setPeople([])
         setErrorMessage('Unable to load people.')
       } finally {
-        setIsLoading(false)
+        if (!controller.signal.aborted) {
+          setIsLoading(false)
+        }
       }
     }
 

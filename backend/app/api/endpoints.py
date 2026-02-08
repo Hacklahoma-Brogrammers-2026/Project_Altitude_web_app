@@ -1,14 +1,15 @@
 from fastapi import APIRouter, HTTPException, Query, status
 from typing import List
 from pydantic import BaseModel, EmailStr
-from services.storage import Person
+from services.storage import Person # Keep for backwards compat if needed, but we prefer Contact
+from database.models import Contact
 from app.core.container import container
 from repos import user_repo
 
 router = APIRouter()
 
 class PersonUpdate(BaseModel):
-    name: str
+    name: str # The frontend sends "name", we need to split it for Contact
     age: int
 
 class UserRegisterRequest(BaseModel):
@@ -25,16 +26,26 @@ class UserResponse(BaseModel):
     username: str
     email: EmailStr
 
-@router.get("/people", response_model=List[Person])
+@router.get("/people", response_model=List[Contact])
 async def get_people(sort: str = Query("last_modified")):
-    """Returns list of all registered people."""
-    people = container.storage.get_all()
+    """Returns list of all registered people for the current user."""
+    print(f"GET /people called with sort={sort}")
+    
+    current_user = container.face_service.current_user_id
+    if not current_user:
+        # For now, return empty or raise error? 
+        # If we return empty list, frontend just shows nothing.
+        print("GET /people: No user logged in.")
+        return []
+
+    people = container.storage.get_all(user_id=current_user)
 
     if sort == "alphabetical":
-        return sorted(people, key=lambda person: person.name.casefold())
+        # Sort by first check name
+        return sorted(people, key=lambda p: (p.first_name + p.last_name).casefold())
 
     if sort == "last_modified":
-        return sorted(people, key=lambda person: person.last_modified, reverse=True)
+        return sorted(people, key=lambda p: p.last_modified, reverse=True)
 
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,

@@ -1,9 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { normalizePerson } from '../utils/transform'
+import { fetchPeople } from '../utils/api'
 import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '' // Removed
 
 function Home() {
   const [query, setQuery] = useState('')
@@ -19,18 +20,15 @@ function Home() {
 
   useEffect(() => {
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/api/people?sort=last_modified`
 
     const loadPeople = async () => {
       setIsLoading(true)
       setErrorMessage('')
       try {
-        const response = await fetch(endpoint, { signal: controller.signal })
-        if (!response.ok) {
-          throw new Error('Request failed')
-        }
-        const data = await response.json()
-        const items = Array.isArray(data) ? data : data?.results ?? []
+        const items = await fetchPeople({ 
+            signal: controller.signal,
+            sort: 'last_modified'
+        })
         setPeople(items)
       } catch (error) {
         if (error.name === 'AbortError') {
