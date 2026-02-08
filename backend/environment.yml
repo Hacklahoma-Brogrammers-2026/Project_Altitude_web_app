@@ -1,5 +1,6 @@
 name: altitude_env
 channels:
+  - pytorch
   - conda-forge
   - defaults
 dependencies:
@@ -12,6 +13,13 @@ dependencies:
   - cmake
   - numpy  # Installing numpy via conda is often faster/more stable for CV
   - dlib   # This is the heavy lifter that usually breaks pip on Windows
+  # - pyaudio TODO: Install thiis manually
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cpuonly
+  - ffmpeg
+  - pydub
 
   # 3. Pip dependencies
   # We use pip to install the rest, including the face_recognition wrapper
@@ -29,3 +37,8 @@ dependencies:
     - pydantic[email]
     - langchain
     - langchain-openai
+    - assemblyai
+    # - pyaudio
+    - assemblyai[extras]
+    - elevenlabs
+    - git+https://github.com/speechbrain/speechbrain.git

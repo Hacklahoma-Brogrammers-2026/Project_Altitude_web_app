@@ -1,17 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { normalizePerson } from '../utils/transform'
+import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
 
-const heroImage =
-  'https://www.figma.com/api/mcp/asset/55c25fd1-e61b-4263-a50f-2ba9d4e4bc55'
-const avatarPlaceholder =
-  'https://www.figma.com/api/mcp/asset/e1cc52ac-9fe1-43fd-9bcf-79865cf93c24'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 const fallbackProfile = {
   contact_id: 'demo-001',
   first_name: 'Ashley',
   last_name: 'Carter',
   note: 'Friendly and easy to recognize. Prefers afternoon updates.',
-  photo: avatarPlaceholder,
+  photo: AVATAR_PLACEHOLDER,
   notes: [
     {
       label: 'Last Seen',
@@ -44,18 +42,17 @@ function Profile() {
     if (!profileData) {
       return null
     }
+    const normalized = normalizePerson(profileData, personId)
+    // Ensure avatar uses placeholder if missing, though normalizePerson handles it if passed null,
+    // we want to ensure fallback to constant if null in normalized.
+    // Actually normalizePerson returns whatever is in the properties.
+    // Let's rely on normalizePerson and then apply fallback if needed, or pass fallback logic to normalizePerson?
+    // The previous code had complex fallback chain culminating in avatarPlaceholder.
+    // normalizePerson: person.photo ?? person.photo_url ?? person.image ?? person.avatar
+    // If all null, it returns undefined/null.
     return {
-      id: profileData.contact_id ?? profileData.id ?? personId,
-      name: `${profileData.first_name ?? 'Unknown'} ${
-        profileData.last_name ?? 'Name'
-      }`.trim(),
-      summary: profileData.note ?? '',
-      avatar:
-        profileData.photo ??
-        profileData.photo_url ??
-        profileData.image ??
-        profileData.avatar ??
-        avatarPlaceholder,
+      ...normalized,
+      avatar: normalized.avatar ?? AVATAR_PLACEHOLDER,
     }
   }, [profileData, personId])
 
@@ -173,7 +170,7 @@ function Profile() {
   return (
     <div className="home profile">
       <div className="home__bg" aria-hidden="true">
-        <img src={heroImage} alt="" />
+        <img src={HERO_IMAGE} alt="" />
       </div>
 
       <main className="home__content profile__content">

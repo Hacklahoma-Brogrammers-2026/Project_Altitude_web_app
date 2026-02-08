@@ -8,6 +8,8 @@ class User(BaseModel):
     email: EmailStr
     password_hash: str
 
+    audio_sample_path: str | None = None
+
 class ContactNote(BaseModel):
     note_id: str
     user_id: str
@@ -31,3 +33,4 @@ class Contact(BaseModel):
 
     note: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    img_path: str | None = None

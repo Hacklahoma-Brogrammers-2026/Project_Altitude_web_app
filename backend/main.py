@@ -2,6 +2,8 @@ import sys
 import os
 from pathlib import Path
 
+from backend.services.audio_embedding_service import init_audio_service
+
 # --- PATH CONFIGURATION ---
 # Get the absolute path of the 'backend' directory (where this file lives)
 backend_dir = Path(__file__).resolve().parent
@@ -33,6 +35,7 @@ from backend.config import config
 from database.db import init_db
 # init_db(config.mongo_url, config.db_name)
 
+init_audio_service()
 # Initialize App
 app = FastAPI(title="Project Altitude API")
 

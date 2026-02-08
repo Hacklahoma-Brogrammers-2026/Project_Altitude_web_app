@@ -5,3 +5,4 @@ database/init/**/venv/
 .venv
 .idea
 backend/data/
+**/pretrained_models/

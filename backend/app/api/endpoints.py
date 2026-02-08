@@ -1,6 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from pathlib import Path
+import shutil
+import uuid
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile, status
 from typing import List
 from pydantic import BaseModel, EmailStr
+from backend.services.audio_embedding_service import AUDIO_FILE_DIR
+from backend.services.audio_transcription_service import process_audio
 from services.storage import Person
 from app.core.container import container
 from repos import user_repo
@@ -17,7 +22,7 @@ class UserRegisterRequest(BaseModel):
     password: str
 
 class UserLoginRequest(BaseModel):
-    username: str
+    email: EmailStr
     password: str
 
 class UserResponse(BaseModel):
@@ -60,7 +65,7 @@ async def register(request: UserRegisterRequest):
 
 @router.post("/login", response_model=UserResponse)
 async def login(request: UserLoginRequest):
-    result = user_repo.validate_login(request.username, request.password)
+    result = user_repo.validate_login(request.email, request.password)
     
     if result.status == "USER_NOT_FOUND":
         raise HTTPException(
@@ -81,3 +86,34 @@ async def login(request: UserLoginRequest):
         )
     
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unknown login error")
+
+@router.post("/process-audio")
+async def analyze_audio(audio: UploadFile = File(...), background: BackgroundTasks = BackgroundTasks()):
+    if audio.filename is None:
+        raise HTTPException(
+            status_code=400,
+            detail="audio file must have a file name"
+        )
+    ext = Path(audio.filename).suffix.lower()
+    if ext not in [".wav"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type. Needs to be one of {[".wav"]}"
+        )
+
+    file_id = uuid.uuid4().hex
+    dest_path = Path(f"{AUDIO_FILE_DIR}/{file_id}{ext}")
+
+    try:
+        with dest_path.open("wb") as f:
+            shutil.copyfileobj(audio.file, f)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error: {e}"
+        )
+
+    background.add_task(process_audio, str(dest_path))
+
+    return 
+

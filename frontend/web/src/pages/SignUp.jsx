@@ -1,7 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-
-const heroImage =
-  'https://www.figma.com/api/mcp/asset/1959cab6-7ed8-4936-bc2d-d8d77e028471'
+import { HERO_IMAGE } from '../utils/constants'
 
 function SignUp() {
   const navigate = useNavigate()
@@ -47,7 +45,7 @@ function SignUp() {
   return (
     <div className="login">
       <div className="login__bg" aria-hidden="true">
-        <img src={heroImage} alt="" />
+        <img src={HERO_IMAGE} alt="" />
       </div>
 
       <main className="login__content">

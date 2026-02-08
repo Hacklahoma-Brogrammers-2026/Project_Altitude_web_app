@@ -1,5 +1,4 @@
-const avatarPlaceholder =
-  'https://www.figma.com/api/mcp/asset/e1cc52ac-9fe1-43fd-9bcf-79865cf93c24'
+import { AVATAR_PLACEHOLDER } from '../utils/constants'
 
 export const people = [
   {
@@ -11,7 +10,7 @@ export const people = [
     lastSeen: 'Today, 3:12 PM',
     status: 'Active',
     notes: 'Friendly and easy to recognize. Prefers afternoon updates.',
-    avatar: avatarPlaceholder,
+    avatar: AVATAR_PLACEHOLDER,
   },
   {
     id: 2,
