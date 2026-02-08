@@ -1,23 +1,38 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { normalizePerson } from '../utils/transform'
 import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
-const SEARCH_ENDPOINT = `${API_BASE_URL}/api/search`
+import { searchUsers, searchInfo } from '../utils/api'
 
 function SearchQuery() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [query, setQuery] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
-  const [results, setResults] = useState([])
-  const [errorMessage, setErrorMessage] = useState('')
   const queryParam = searchParams.get('q') ?? ''
+  const modeParam = searchParams.get('mode') ?? 'users'
+  const searchMode = modeParam === 'info' ? 'info' : 'users'
+  
+  const [query, setQuery] = useState('')
+  // Initialize isSearching to true if there's a query param, so it shows immediately on mount
+  const [isSearching, setIsSearching] = useState(!!queryParam)
+  const [results, setResults] = useState(null) // Initialize as null to indicate "not fetched"
+  const [errorMessage, setErrorMessage] = useState('')
 
   const normalizedResults = useMemo(() => {
-    return results.map(normalizePerson)
+    return (results || []).map(normalizePerson)
   }, [results])
+
+  // Ensure loading state is active immediately when constraints change
+  // This prevents a "flash" of empty state before the fetch effect kicks in
+  useLayoutEffect(() => {
+    if (queryParam.trim()) {
+      setIsSearching(true)
+      // When query changes, reset results to null to prevent "No results" from showing based on old data
+      // or during the loading phase.
+      if (queryParam !== query) { 
+         setResults(null)
+      }
+    }
+  }, [queryParam, searchMode])
 
   useEffect(() => {
     setQuery(queryParam)
@@ -38,17 +53,11 @@ function SearchQuery() {
       setIsSearching(true)
       setErrorMessage('')
       try {
-        const response = await fetch(
-          `${SEARCH_ENDPOINT}?q=${encodeURIComponent(trimmed)}`,
-          {
-            signal: controller.signal,
-          }
-        )
-        if (!response.ok) {
-          throw new Error('Search request failed.')
-        }
-        const data = await response.json()
-        const items = Array.isArray(data) ? data : data?.results ?? []
+        const items =
+          searchMode === 'info'
+            ? await searchInfo(trimmed, controller.signal)
+            : await searchUsers(trimmed, controller.signal)
+
         setResults(items)
       } catch (error) {
         if (error.name === 'AbortError') {
@@ -64,7 +73,7 @@ function SearchQuery() {
     runSearch()
 
     return () => controller.abort()
-  }, [queryParam])
+  }, [queryParam, searchMode])
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -72,7 +81,11 @@ function SearchQuery() {
     if (!trimmed) {
       return
     }
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`)
+    navigate(
+      `/search?q=${encodeURIComponent(trimmed)}&mode=${encodeURIComponent(
+        searchMode,
+      )}`,
+    )
   }
 
   return (
@@ -107,10 +120,18 @@ function SearchQuery() {
         <section className="home__card" aria-label="People">
           <h2 className="home__card-title">People</h2>
 
+          {isSearching ? (
+            <div
+              className="home__results-progress"
+              role="progressbar"
+              aria-label="Searching"
+              aria-busy="true"
+            />
+          ) : null}
           {errorMessage ? (
             <p className="home__status home__status--error">{errorMessage}</p>
           ) : null}
-          {!errorMessage && !isSearching && queryParam.trim() &&
+          {!errorMessage && !isSearching && results !== null && queryParam.trim() &&
           normalizedResults.length === 0 ? (
             <p className="home__status">No results found.</p>
           ) : null}
@@ -129,7 +150,12 @@ function SearchQuery() {
                   aria-hidden="true"
                 />
                 <span className="home__row-name">{row.name}</span>
-                <span className="home__row-relation">{row.relation}</span>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span className="home__row-relation">{row.relation}</span>
+                  {row.summary ? (
+                    <span className="home__row-summary">{row.summary}</span>
+                  ) : null}
+                </div>
                 <span className="home__row-more">More +</span>
               </Link>
             ))}

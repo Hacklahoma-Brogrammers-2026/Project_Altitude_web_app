@@ -52,3 +52,32 @@ def update_contact(contact: Contact) -> Contact:
     if result is None:
         raise ValueError("Contact was not found")
     return Contact(**result)
+
+from typing import List
+
+def get_all_contacts_for_user(user_id: str) -> List[Contact]:
+    contacts = get_db_collections().contacts
+    cursor = contacts.find({"owner_user_id": user_id}, {"_id": 0})
+    return [Contact(**doc) for doc in cursor]
+
+
+def search_contacts_by_name(user_id: str, query: str) -> List[Contact]:
+    contacts = get_db_collections().contacts
+    # Case-insensitive regex search for name
+    regex = {"$regex": query, "$options": "i"}
+    cursor = contacts.find({
+        "owner_user_id": user_id,
+        "$or": [
+            {"first_name": regex},
+            {"last_name": regex}
+        ]
+    }, {"_id": 0})
+    return [Contact(**doc) for doc in cursor]
+
+
+def get_contact_by_id(contact_id: str) -> Contact | None:
+    contacts = get_db_collections().contacts
+    doc = contacts.find_one({"contact_id": contact_id}, {"_id": 0})
+    if doc:
+        return Contact(**doc)
+    return None

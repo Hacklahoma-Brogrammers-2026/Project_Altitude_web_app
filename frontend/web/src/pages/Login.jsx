@@ -1,8 +1,10 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { HERO_IMAGE } from '../utils/constants'
 
 function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const redirectPath = location.state?.from?.pathname ?? '/home'
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -21,9 +23,17 @@ function Login() {
 
       if (response.ok) {
         const result = await response.json();
-        // Ideally store the token or user data in context/local storage here
+        const userName = result?.username ?? data?.email?.split('@')[0] ?? ''
+        localStorage.setItem(
+          'altitudeUser',
+          JSON.stringify({
+            id: result?.user_id ?? null,
+            username: userName,
+            email: result?.email ?? data?.email ?? '',
+          }),
+        )
         console.log("Login successful:", result);
-        navigate('/home');
+        navigate(redirectPath, { replace: true });
       } else {
         alert("Login failed");
       }

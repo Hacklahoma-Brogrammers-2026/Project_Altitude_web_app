@@ -1,15 +1,19 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { normalizePerson } from '../utils/transform'
+import { fetchPeople } from '../utils/api'
 import { HERO_IMAGE, AVATAR_PLACEHOLDER } from '../utils/constants'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '' // Removed
 
 function Home() {
   const [query, setQuery] = useState('')
   const [people, setPeople] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false) // Added new state
   const [errorMessage, setErrorMessage] = useState('')
+  const [searchMode, setSearchMode] = useState('users')
+  const [userName, setUserName] = useState('')
   const navigate = useNavigate()
 
   const latestPeople = useMemo(() => {
@@ -18,18 +22,15 @@ function Home() {
 
   useEffect(() => {
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/api/getPeople?sort=last_modified`
 
     const loadPeople = async () => {
       setIsLoading(true)
       setErrorMessage('')
       try {
-        const response = await fetch(endpoint, { signal: controller.signal })
-        if (!response.ok) {
-          throw new Error('Request failed')
-        }
-        const data = await response.json()
-        const items = Array.isArray(data) ? data : data?.results ?? []
+        const items = await fetchPeople({ 
+            signal: controller.signal,
+            sort: 'last_modified'
+        })
         setPeople(items)
       } catch (error) {
         if (error.name === 'AbortError') {
@@ -47,13 +48,39 @@ function Home() {
     return () => controller.abort()
   }, [])
 
+  useEffect(() => {
+    const storedUser = localStorage.getItem('altitudeUser')
+    if (!storedUser) {
+      return
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser)
+      setUserName(parsed?.username ?? '')
+    } catch {
+      setUserName('')
+    }
+  }, [])
+
   const handleSubmit = (event) => {
     event.preventDefault()
     const trimmed = query.trim()
     if (!trimmed) {
       return
     }
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`)
+    // Show progress bar immediately
+    setIsSubmitting(true)
+    
+    // Slight delay to allow the UI to update and show the progress bar before navigating
+    // This gives the user visual feedback that the action has been registered
+    setTimeout(() => {
+      navigate(
+        `/search?q=${encodeURIComponent(trimmed)}&mode=${encodeURIComponent(
+          searchMode,
+        )}`,
+      )
+      // We don't need to set isSubmitting(false) because the component unmounts
+    }, 50)
   }
 
   return (
@@ -63,7 +90,34 @@ function Home() {
       </div>
 
       <main className="home__content home__content--center">
-        <p className="home__greeting">Hi, Ashley!</p>
+        <div className="home__header-row">
+          <p className="home__greeting">Hi, {userName.trim() || 'there'}!</p>
+          <div className="home__toggle-group">
+            <span className="home__toggle-label">Search mode</span>
+            <div className="home__toggle" role="group" aria-label="Search mode">
+            <button
+              className={`home__toggle-button${
+                searchMode === 'users' ? ' home__toggle-button--active' : ''
+              }`}
+              type="button"
+              aria-pressed={searchMode === 'users'}
+              onClick={() => setSearchMode('users')}
+            >
+              Users
+            </button>
+            <button
+              className={`home__toggle-button${
+                searchMode === 'info' ? ' home__toggle-button--active' : ''
+              }`}
+              type="button"
+              aria-pressed={searchMode === 'info'}
+              onClick={() => setSearchMode('info')}
+            >
+              Notes
+            </button>
+            </div>
+          </div>
+        </div>
 
         <form className="home__search" onSubmit={handleSubmit}>
           <input
@@ -78,6 +132,7 @@ function Home() {
           <button className="home__search-button" type="submit">
             &gt;
           </button>
+          {isSubmitting ? <span className="home__search-progress" /> : null}
         </form>
 
         <section className="home__card" aria-label="Latest Data">
@@ -112,21 +167,6 @@ function Home() {
           </div>
         </section>
 
-        <section className="home__card" aria-label="Don’t Forget">
-          <h2 className="home__card-title">Don’t Forget...</h2>
-
-          <div className="home__chips">
-            <button className="home__chip" type="button">
-              Birthdays
-            </button>
-            <button className="home__chip" type="button">
-              Colleagues
-            </button>
-            <button className="home__chip" type="button">
-              Add More +
-            </button>
-          </div>
-        </section>
       </main>
     </div>
   )
