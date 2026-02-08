@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 # Import Routers
-from app.api.endpoints import router as api_router
+# from app.api.endpoints import router as api_router
 from app.api.websockets import ws_router
 
 # Initialize App
@@ -37,7 +37,7 @@ app.add_middleware(
 app.mount("/images", StaticFiles(directory="data/faces"), name="images")
 
 # 3. Register Routes
-app.include_router(api_router)
+# app.include_router(api_router)
 app.include_router(ws_router)
 
 @app.get("/")
