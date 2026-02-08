@@ -1,14 +1,23 @@
-from pydantic import BaseModel
-from database.models import User
-from services.audio_transcription_service import Utterance
-from langchain.chat_models import init_chat_model
-from config import config
+from pydantic import BaseModel, Field
+from database.models import Contact, ContactNote, User
+from backend.services.audio_transcription_service import Utterance, process_audio
+from langchain.agents import create_agent
+from backend.config import config
 
-model = init_chat_model(config.llm_model_name)
+class NotableFact(BaseModel):
+    label: str = Field(..., description="Label for the fact, such as 'birthday' or 'occupation'")
+    content: str = Field(default=..., description="Content for the fact.")
+
+class ListOfNotableFacts(BaseModel):
+    notable_facts: list[NotableFact] = Field(..., description="The list of notable facts. If there are no notable facts, return an empty list.")
+
+agent = create_agent(config.llm_model_name, response_format=ListOfNotableFacts)
+
 
 class ConversationEntry(BaseModel):
     speaker: str
     content: str
+
 
 def utterances_to_conversation_entries(utterances: list[Utterance], user: User) -> list[ConversationEntry]:
 
@@ -26,6 +35,39 @@ def utterances_to_conversation_entries(utterances: list[Utterance], user: User) 
             ))
     return output
 
-def extract_contact_facts_from_conversation(conversation: list[ConversationEntry], user: User)
+def extract_contact_facts_from_conversation(conversation: list[ConversationEntry], user: User, contact: Contact) -> list[ContactNote]:
+    system_prompt = f"""
+    You are a helpful AI assistant that listens to {user.username} conversations with people they are connected to. Your job is to help them remember important information from their conversations that will be useful in the future. Important information includes small things like a birthday or other significant dates, occupation, names of family members, contact information, stories, a plan to meet up later, etc. For the conversation snippet you are given, extract these relevant facts. Remember that these facts will be stored in long-term storage, so don't record everything. Just record things that would be good to remember in the long term. It is okay to response with no extracted facts."""
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": str(conversation)}
+    ]
+
+    result = agent.invoke({"messages": messages}) # type: ignore
+
+    extracted_facts: ListOfNotableFacts = result['structured_response']
+    print(extracted_facts)
+
+if __name__ == "__main__":
+    
+    user = User(
+        user_id='afa',
+        username='Noah',
+        email='noah@gmail.com',
+        password_hash='asfasfdsfasf',
+        audio_sample_path="./backend/data/noah_audio_sample.wav"
+        
+    )
+    utterances = process_audio("./backend/data/noah_and_k_data.wav", user)
+    conversation = conversation = utterances_to_conversation_entries(utterances, user)
+
+    extract_contact_facts_from_conversation(
+        conversation=conversation,
+        user=user,
+        contact=None
+    )
+
+    
 
 
