@@ -145,6 +145,23 @@
   outline: none;
 }
 
+.login__helper {
+  margin: 0;
+  text-align: center;
+  font-size: 0.95rem;
+  color: rgba(52, 65, 83, 0.8);
+}
+
+.login__link {
+  color: #344153;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login__link:hover {
+  text-decoration: underline;
+}
+
 .login__content,
 .home__content {
   max-width: 900px;

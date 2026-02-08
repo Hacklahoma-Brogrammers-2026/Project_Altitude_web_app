@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 const heroImage =
   'https://www.figma.com/api/mcp/asset/1959cab6-7ed8-4936-bc2d-d8d77e028471'
 
-function Login() {
+function SignUp() {
   const navigate = useNavigate()
 
   const handleSubmit = (event) => {
@@ -20,19 +20,30 @@ function Login() {
       <main className="login__content">
         <h1 className="login__title">Altitude</h1>
 
-        <section className="login__card" aria-label="Log in">
-          <h2 className="login__card-title">Welcome Back</h2>
+        <section className="login__card" aria-label="Sign up">
+          <h2 className="login__card-title">Create Account</h2>
 
           <form className="login__form" onSubmit={handleSubmit}>
-            <label className="login__label" htmlFor="username">
-              User
+            <label className="login__label" htmlFor="fullName">
+              Full name
             </label>
             <input
               className="login__input"
-              id="username"
-              name="username"
+              id="fullName"
+              name="fullName"
               type="text"
-              autoComplete="username"
+              autoComplete="name"
+            />
+
+            <label className="login__label" htmlFor="email">
+              Email
+            </label>
+            <input
+              className="login__input"
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
             />
 
             <label className="login__label" htmlFor="password">
@@ -43,18 +54,18 @@ function Login() {
               id="password"
               name="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
             />
 
             <button className="login__button" type="submit">
-              Log In
+              Sign Up
             </button>
           </form>
 
           <p className="login__helper">
-            Don’t have an account?{' '}
-            <Link className="login__link" to="/signup">
-              Sign up
+            Already have an account?{' '}
+            <Link className="login__link" to="/login">
+              Log In
             </Link>
           </p>
         </section>
@@ -63,4 +74,4 @@ function Login() {
   )
 }
 
-export default Login
+export default SignUp

@@ -6,6 +6,7 @@ import Login from './pages/Login.jsx'
 import PersonDatabase from './pages/PersonDatabase.jsx'
 import Profile from './pages/Profile.jsx'
 import SearchQuery from './pages/SearchQuery.jsx'
+import SignUp from './pages/SignUp.jsx'
 import VideoProcessing from './pages/VideoProcessing.jsx'
 
 function AppLayout() {
@@ -84,6 +85,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<SignUp />} />
       <Route element={<AppLayout />}>
         <Route path="/home" element={<Home />} />
         <Route path="/people" element={<PersonDatabase />} />
