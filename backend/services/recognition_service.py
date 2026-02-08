@@ -7,11 +7,11 @@ from typing import List, Dict, Any, Tuple
 from .storage import PersonRepository, JsonPersonRepository, Person
 
 class FaceService:
-    def __init__(self, storage: PersonRepository = None):
-        # Use JSON implementation by default
+    def __init__(self, storage: PersonRepository = None, images_dir: str = "data/faces"):
         self.storage = storage or JsonPersonRepository(data_file="data/people.json")
-        self.images_dir = "data/faces"
+        self.images_dir = images_dir
         
+        # Ensure the directory exists (Service level check)
         if not os.path.exists(self.images_dir):
             os.makedirs(self.images_dir)
 
