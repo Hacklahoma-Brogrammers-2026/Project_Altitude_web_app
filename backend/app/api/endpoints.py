@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, Query, status
-from typing import List
+from fastapi import APIRouter, HTTPException, Query, Request, status
+from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 from services.storage import Person # Keep for backwards compat if needed, but we prefer Contact
 from database.models import Contact
 from app.core.container import container
-from repos import user_repo
+from repos import contact_note_repo, contact_repo, user_repo
 
 router = APIRouter()
 
@@ -25,6 +25,16 @@ class UserResponse(BaseModel):
     user_id: str
     username: str
     email: EmailStr
+
+def _build_photo_url(request: Request, image_path: Optional[str]) -> Optional[str]:
+    if not image_path:
+        return None
+    if image_path.startswith("http://") or image_path.startswith("https://"):
+        return image_path
+
+    clean_path = image_path.replace("\\", "/").split("data/faces/")[-1].lstrip("/")
+    base_url = str(request.base_url).rstrip("/")
+    return f"{base_url}/images/{clean_path}"
 
 @router.get("/people", response_model=List[Contact])
 async def get_people(sort: str = Query("last_modified")):
@@ -59,6 +69,40 @@ async def update_person(person_id: str, person: PersonUpdate):
     if success:
         return {"status": "updated", "person_id": person_id}
     return {"status": "error", "message": "Person not found"}
+
+@router.get("/person/{person_id}")
+async def get_person(person_id: str, request: Request):
+    current_user = container.face_service.current_user_id
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not logged in",
+        )
+
+    contact = contact_repo.get_contact_by_id(person_id)
+    if not contact or contact.owner_user_id != current_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Person not found",
+        )
+
+    notes = contact_note_repo.list_contact_notes_for_contact(
+        user_id=current_user,
+        contact_id=person_id,
+    )
+
+    return {
+        "contact_id": contact.contact_id,
+        "first_name": contact.first_name,
+        "last_name": contact.last_name,
+        "note": contact.note,
+        "photo": _build_photo_url(request, contact.image_path),
+        "notes": [
+            {"label": note.label, "content": note.content}
+            for note in notes
+        ],
+        "last_modified": contact.last_modified,
+    }
 
 @router.post("/register", response_model=UserResponse)
 async def register(request: UserRegisterRequest):

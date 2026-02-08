@@ -28,7 +28,7 @@ const fallbackProfile = {
 
 function Profile() {
   const { id } = useParams()
-  const personId = Number(id)
+  const personId = (id ?? '').trim()
   const [openField, setOpenField] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
@@ -76,7 +76,7 @@ function Profile() {
   }, [profileData])
 
   useEffect(() => {
-    if (Number.isNaN(personId)) {
+    if (!personId) {
       setProfileData(null)
       setProfileError('Invalid profile id.')
       setIsProfileLoading(false)
@@ -84,7 +84,7 @@ function Profile() {
     }
 
     const controller = new AbortController()
-    const endpoint = `${API_BASE_URL}/api/getPerson/${personId}`
+    const endpoint = `${API_BASE_URL}/person/${personId}`
 
     const loadProfile = async () => {
       setIsProfileLoading(true)
@@ -127,7 +127,7 @@ function Profile() {
 
   useEffect(() => {
     const trimmed = searchQuery.trim()
-    if (!trimmed || Number.isNaN(personId)) {
+    if (!trimmed || !personId) {
       setSearchResults([])
       setSearchError('')
       setIsSearching(false)
