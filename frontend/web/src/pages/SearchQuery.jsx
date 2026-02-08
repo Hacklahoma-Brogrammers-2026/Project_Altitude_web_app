@@ -6,7 +6,8 @@ const heroImage =
 const avatarPlaceholder =
   'https://www.figma.com/api/mcp/asset/b0db9ac1-bd8f-4d55-97c9-c6dce409929a'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
-const SEARCH_ENDPOINT = `${API_BASE_URL}/api/search`
+const SEARCH_USER_ENDPOINT = `${API_BASE_URL}/api/searchUser`
+const SEARCH_INFO_ENDPOINT = `${API_BASE_URL}/api/searchInfo`
 
 function SearchQuery() {
   const [searchParams] = useSearchParams()
@@ -16,11 +17,13 @@ function SearchQuery() {
   const [results, setResults] = useState([])
   const [errorMessage, setErrorMessage] = useState('')
   const queryParam = searchParams.get('q') ?? ''
+  const modeParam = searchParams.get('mode') ?? 'users'
+  const searchMode = modeParam === 'info' ? 'info' : 'users'
 
   const normalizedResults = useMemo(() => {
     return results.map((row, index) => {
       const name = row.name ?? row.fullName ?? 'Unknown'
-      const relation = row.relation ?? row.group ?? 'Person'
+      const relation = row.label ?? row.relation ?? row.group ?? 'Person'
       const id = row.id ?? row.personId ?? `${name}-${index}`
       return {
         id,
@@ -50,11 +53,11 @@ function SearchQuery() {
       setIsSearching(true)
       setErrorMessage('')
       try {
+        const endpoint =
+          searchMode === 'info' ? SEARCH_INFO_ENDPOINT : SEARCH_USER_ENDPOINT
         const response = await fetch(
-          `${SEARCH_ENDPOINT}?q=${encodeURIComponent(trimmed)}`,
-          {
-            signal: controller.signal,
-          }
+          `${endpoint}?q=${encodeURIComponent(trimmed)}`,
+          { signal: controller.signal }
         )
         if (!response.ok) {
           throw new Error('Search request failed.')
@@ -76,7 +79,7 @@ function SearchQuery() {
     runSearch()
 
     return () => controller.abort()
-  }, [queryParam])
+  }, [queryParam, searchMode])
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -84,7 +87,11 @@ function SearchQuery() {
     if (!trimmed) {
       return
     }
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`)
+    navigate(
+      `/search?q=${encodeURIComponent(trimmed)}&mode=${encodeURIComponent(
+        searchMode,
+      )}`,
+    )
   }
 
   return (

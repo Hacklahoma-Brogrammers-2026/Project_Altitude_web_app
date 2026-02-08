@@ -12,6 +12,7 @@ function Home() {
   const [people, setPeople] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [searchMode, setSearchMode] = useState('users')
   const navigate = useNavigate()
 
   const latestPeople = useMemo(() => {
@@ -63,7 +64,11 @@ function Home() {
     if (!trimmed) {
       return
     }
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`)
+    navigate(
+      `/search?q=${encodeURIComponent(trimmed)}&mode=${encodeURIComponent(
+        searchMode,
+      )}`,
+    )
   }
 
   return (
@@ -73,7 +78,34 @@ function Home() {
       </div>
 
       <main className="home__content home__content--center">
-        <p className="home__greeting">Hi, Ashley!</p>
+        <div className="home__header-row">
+          <p className="home__greeting">Hi, Ashley!</p>
+          <div className="home__toggle-group">
+            <span className="home__toggle-label">Search mode</span>
+            <div className="home__toggle" role="group" aria-label="Search mode">
+            <button
+              className={`home__toggle-button${
+                searchMode === 'users' ? ' home__toggle-button--active' : ''
+              }`}
+              type="button"
+              aria-pressed={searchMode === 'users'}
+              onClick={() => setSearchMode('users')}
+            >
+              Users
+            </button>
+            <button
+              className={`home__toggle-button${
+                searchMode === 'info' ? ' home__toggle-button--active' : ''
+              }`}
+              type="button"
+              aria-pressed={searchMode === 'info'}
+              onClick={() => setSearchMode('info')}
+            >
+              Notes
+            </button>
+            </div>
+          </div>
+        </div>
 
         <form className="home__search" onSubmit={handleSubmit}>
           <input
