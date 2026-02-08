@@ -31,6 +31,10 @@ class UserResponse(BaseModel):
     username: str
     email: EmailStr
 
+@router.get("/")
+def hello_world():
+    return "hello_world"
+
 @router.get("/people", response_model=List[Person])
 async def get_people():
     """Returns list of all registered people."""

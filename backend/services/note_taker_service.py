@@ -24,3 +24,4 @@ def take_notes(file_path: str, user_id: str, contact_id: str):
 
     for contact_note in contact_notes:
         save_contact_note_to_database(contact_note)
+    print(contact_notes)
