@@ -1,8 +1,10 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { HERO_IMAGE } from '../utils/constants'
 
 function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const redirectPath = location.state?.from?.pathname ?? '/home'
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -31,7 +33,7 @@ function Login() {
           }),
         )
         console.log("Login successful:", result);
-        navigate('/home');
+        navigate(redirectPath, { replace: true });
       } else {
         alert("Login failed");
       }

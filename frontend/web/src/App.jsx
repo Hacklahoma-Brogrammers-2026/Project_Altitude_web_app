@@ -1,4 +1,11 @@
-import { NavLink, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import {
+  NavLink,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+} from 'react-router-dom'
 import { useState } from 'react'
 import './App.css'
 import Home from './pages/Home.jsx'
@@ -17,6 +24,11 @@ function AppLayout() {
   }
 
   const handleNavClick = () => {
+    setNavOpen(false)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('altitudeUser')
     setNavOpen(false)
   }
 
@@ -66,7 +78,7 @@ function AppLayout() {
           <NavLink
             className="app-nav__link app-nav__logout"
             to="/login"
-            onClick={handleNavClick}
+            onClick={handleLogout}
           >
             Log out
           </NavLink>
@@ -80,13 +92,30 @@ function AppLayout() {
   )
 }
 
+function RequireAuth({ children }) {
+  const location = useLocation()
+  const storedUser = localStorage.getItem('altitudeUser')
+
+  if (!storedUser) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  return children
+}
+
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
-      <Route element={<AppLayout />}>
+      <Route
+        element={
+          <RequireAuth>
+            <AppLayout />
+          </RequireAuth>
+        }
+      >
         <Route path="/home" element={<Home />} />
         <Route path="/people" element={<PersonDatabase />} />
         <Route path="/profile/:id" element={<Profile />} />
