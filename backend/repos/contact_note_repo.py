@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from database.models import ContactNote
 from database.db import get_db_collections
 from backend.repos.user_repo import get_user_by_user_id
+from services.vector_embedding_service import get_vector_embedding
 
 
 class NoteSearchResult(BaseModel):
@@ -25,7 +26,7 @@ def create_contact_note(
     note_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
 
-    embedding = [1.0] # TODO
+    embedding = get_vector_embedding(f"Label: {label}\nContent: {content}")
 
     return ContactNote(
         note_id=note_id,
@@ -122,10 +123,9 @@ def delete_contact_note(note_id: str) -> bool:
     return res.deleted_count == 1
 
 
-# TODO
 def semantic_search_notes(
     user_id: str,
-    query_vector: list[float],
+    query: str,
     limit: int = 10,
     num_candidates: int = 200,
     contact_id: str | None = None,
@@ -139,6 +139,9 @@ def semantic_search_notes(
       - index includes filter fields: user_id, contact_id
     """
     contact_notes = get_db_collections().contact_notes
+
+    query_vector = get_vector_embedding(query)
+    
 
     filt: dict = {"user_id": {"$eq": user_id}}
     if contact_id is not None:
